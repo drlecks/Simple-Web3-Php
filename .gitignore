@@ -1,0 +1,6 @@
+composer.phar
+/vendor/
+.phpintel/
+/.idea/
+composer.lock
+*.private.php

@@ -1,0 +1,20 @@
+{
+    "name": "drlecks/simple-web3-php",
+    "description": "Web3 library in PHP.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "drlecks",
+            "email": "contacte@powdercode.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "~7|~8.0"
+    }, 
+    "require": { 
+        "kornrunner/ethereum-offline-raw-tx": "^0.4.0",
+        "kornrunner/keccak": "~1", 
+        "phpseclib/phpseclib": "~2.0.30" 
+    }
+}
