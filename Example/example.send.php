@@ -22,16 +22,10 @@ use SWeb3\SWeb3_Contract;
 use phpseclib\Math\BigInteger as BigNumber;
 
 
-//send 0.001 eth to 0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447
-/* SEND PARAMS: 
-from: DATA, 20 Bytes - The address the transaction is send from.
-to: DATA, 20 Bytes - (optional when creating new contract) The address the transaction is directed to.
-gasLimit: QUANTITY - (optional, default: 90000) Integer of the gas provided for the transaction execution. It will return unused gas.
-gasPrice: QUANTITY - (optional, default: To-Be-Determined) Integer of the gasPrice used for each paid gas
-value: QUANTITY - (optional) Integer of the value sent with this transaction
-data: DATA - (null for sending ether, only for contract interacting) The compiled code of a contract OR the hash of the invoked method signature and encoded parameters. For details see Ethereum Contract ABI
-nonce: QUANTITY - (optional) Integer of a nonce. This allows to overwrite your own pending transactions that use the same nonce
-*/ 
+//IMPORTANT
+//Remember that this is an example showing how to execute the common features of sending signed transactions through the ethereum rpc api
+//This code does not represent a clean / efficient / performant aproach to implement them in a production environment
+
 
 $extra_curl_params = [];
 //INFURA ONLY: Prepare extra curl params, to add infura private key to the request
@@ -70,6 +64,7 @@ exit(0);
 function SendETH()
 {
     global $sweb3;
+    //send 0.001 eth to 0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447
 
     //estimate gas cost
     $sendParams = [ 
@@ -96,14 +91,19 @@ function SendETH()
 function Contract_Set_public_uint()
 {
     global $sweb3, $contract;
+ 
+    //nonce depends on the sender/signing address. it's the number of transactions made by this address, and can be used to override older transactions
+    //it's used as a counter/queue
+    //get nonce gives you the "desired next number" (makes a query to the provider), but you can setup more complex & efficient nonce handling ... at your own risk ;)
+    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
 
     //$contract->send always populates: gasPrice, gasPrice, IF AND ONLY IF they are not already defined in $extra_data 
     //$contract->send always populates: to (contract address), data (ABI encoded $sendData), these can NOT be defined from outside
-    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
     $result = $contract->send('Set_public_uint', time(),  $extra_data);
     
     PrintCallResult('Contract_Set_public_uint: ' . time(), $result);
 }
+
 
 function Contract_AddTupleA()
 {
