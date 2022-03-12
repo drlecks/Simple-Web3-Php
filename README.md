@@ -1,9 +1,6 @@
 # simple-web3-php
-
-[![PHP](https://github.com/drlecks/Simple-Web3-Php/actions/workflows/php.yml/badge.svg)](https://github.com/drlecks/Simple-Web3-Php/actions/workflows/php.yml)
-[![Build Status](https://travis-ci.org/drlecks/Simple-Web3-Php.svg?branch=master)](https://travis-ci.org/drlecks/simple-web3-php)
-[![codecov](https://codecov.io/gh/drlecks/Simple-Web3-Php/branch/master/graph/badge.svg)](https://codecov.io/gh/drlecks/Simple-Web3-Php)
-[![Join the chat at https://gitter.im/drlecks/Simple-Web3-Php](https://img.shields.io/badge/gitter-join%20chat-brightgreen.svg)](https://gitter.im/drlecks/Simple-Web3-Php)
+ 
+[![Join the chat at https://gitter.im/drlecks/Simple-Web3-Php](https://img.shields.io/badge/gitter-join%20chat-brightgreen.svg)](https://gitter.im/Simple-Web3-Php/community)
 [![Licensed under the MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/drlecks/Simple-Web3-Php/blob/master/LICENSE)
 
 
@@ -34,7 +31,7 @@ composer require drlecks/simple-web3-php dev-master
 Or you can add this line in composer.json
 
 ```
-"drlecks/simple-web3-php": "dev-master"
+"drlecks/simple-web3-php": "~1"
 ```
 
 
@@ -144,7 +141,7 @@ define('SWP_Contract_ABI', $SWP_Contract_ABI);
 To enable transaction sending & signing, enter a valid pair of address and private key. Please take this advises before continuing:
 - The address must be active on the ropsten network and have some ether available to send the transactions.
 - Double check that you are using a test endpoint, otherwise you will be spending real eth to send the transactions
-- Be sure to keep you private key secret! 
+- Be sure to keep your private key secret! 
 
 ```php
 //SIGNING

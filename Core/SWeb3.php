@@ -9,11 +9,7 @@
  * @license MIT 
  */
 
-namespace SWeb3;
-
-include_once("../vendor/autoload.php"); 
-include_once("abi.class.php"); 
-include_once("sweb3_utils.class.php"); 
+namespace SWeb3; 
 
 use SWeb3\Utils;
 use kornrunner\Ethereum\Transaction;

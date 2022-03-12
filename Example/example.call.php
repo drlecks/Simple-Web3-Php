@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This file is part of simple-web3-php package.
  * 
@@ -9,12 +8,15 @@
  * @license MIT 
  */
 
+namespace SWeb3;
+
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
-include_once("../Core/sweb3_contract.class.php");
+include_once("../vendor/autoload.php");
 include_once("example.config.php");
-
+ 
+use stdClass;
 use SWeb3\SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3_Contract;

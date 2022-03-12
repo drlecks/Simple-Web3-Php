@@ -8,14 +8,15 @@
  * @author Alex Cabrera
  * @license MIT 
  */
+namespace SWeb3;
 
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
-include_once("../Core/sweb3.class.php");
-include_once("../Core/sweb3_contract.class.php");
+include_once("../vendor/autoload.php");
 include_once("example.config.php");
-
+ 
+use stdClass; 
 use SWeb3\SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3_Contract;
@@ -96,7 +97,7 @@ function Contract_Set_public_uint()
     //get nonce gives you the "desired next number" (makes a query to the provider), but you can setup more complex & efficient nonce handling ... at your own risk ;)
     $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
 
-    //$contract->send always populates: gasPrice, gasPrice, IF AND ONLY IF they are not already defined in $extra_data 
+    //$contract->send always populates: gasPrice, gasLimit, IF AND ONLY IF they are not already defined in $extra_data 
     //$contract->send always populates: to (contract address), data (ABI encoded $sendData), these can NOT be defined from outside
     $result = $contract->send('Set_public_uint', time(),  $extra_data);
     

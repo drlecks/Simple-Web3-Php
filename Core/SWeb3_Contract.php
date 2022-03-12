@@ -10,8 +10,7 @@
  */
 
 namespace SWeb3;
-
-include_once("sweb3.class.php"); 
+ 
 
 use SWeb3\Utils;
 use SWeb3\SWeb3;
