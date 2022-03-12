@@ -44,14 +44,14 @@ $gasPrice = $sweb3->refreshGasPrice();
 //GENERAL OPERATIONS
 //uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
-//SendETH();
+SendETH();
 
 //CONTRACT
 //uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
 //initialize contract from address and ABI string
 $contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
-Contract_Set_public_uint();
+//Contract_Set_public_uint();
 //Contract_AddTupleA();
 //Contract_AddTupleA_Params();
 //AddTuple_B();
@@ -76,8 +76,7 @@ function SendETH()
 
     //get function estimateGas
     $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
-    $bigint_10000 = new BigNumber(10000);
-    $gasEstimate = $sweb3->utils->hexToDec($gasEstimateResult->result)->add($bigint_10000);
+    $gasEstimate = $sweb3->utils->hexToDec($gasEstimateResult->result);
  
     //prepare sending
     $sendParams['nonce'] = $sweb3->getNonce(SWP_ADDRESS); 
