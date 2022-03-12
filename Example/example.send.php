@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This file is part of simple-web3-php package.
  * 
@@ -8,6 +7,7 @@
  * @author Alex Cabrera
  * @license MIT 
  */
+
 namespace SWeb3;
 
 ini_set('display_errors', '1');
