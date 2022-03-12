@@ -47,10 +47,13 @@ class SWeb3_Contract
         { 
             $function_name = $function->name;
 
-            if($function->stateMutability == 'constructor') {
+            $stateMutability = "";
+            if (isset($function->stateMutability)) $stateMutability = $function->stateMutability;
+
+            if($stateMutability == 'constructor') {
                 //constructor
             }
-            else if($function->stateMutability == 'view' || $function->stateMutability == 'pure') {
+            else if($stateMutability == 'view' || $stateMutability == 'pure') {
                 //call 
                 $this->call_functions[$function_name] = $function;
             }
