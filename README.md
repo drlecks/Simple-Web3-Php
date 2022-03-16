@@ -6,8 +6,6 @@
 
 A php interface for interacting with the Ethereum blockchain and ecosystem.
 
-**UNDER CONSTRUCTION**
-
 
 # Features
 
@@ -15,15 +13,15 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 - Customizable curl calls
 - Call: get net state
 - Send signed transactions
+- Batch call requests and signed transactions
 - Full ABIv2 encode/decode 
+- Contract creation
 - Contract interaction (call/send)
 - Examples provided interacting with simple types, strings, tuples, arrays, arrays of tuples with arrays, multi-dimension arrays... 
 
 
-
 # Install
 
- 
 ```
 composer require drlecks/simple-web3-php "^0.6.0"
 ```
@@ -59,12 +57,13 @@ $gasPrice = $sweb3->refreshGasPrice();
 use SWeb3\Utils;
 
 $sweb3->chainId = '0x3';//ropsten
+$from_address = '0x0000000000000000000000000000000000000000';
 $sendParams = [ 
-    'from' => SWP_ADDRESS,
-    'to' => '0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447', 
+    'from' =>   $from_address,  
+    'to' =>     '0x1111111111111111111111111111111111111111', 
     'gasPrice' => $sweb3->gasPrice, 
     'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->getNonce(SWP_ADDRESS)
+    'nonce' => $sweb3->getNonce($from_address)  
 ]; 
 $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```
@@ -74,15 +73,29 @@ $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 use SWeb3\Utils;
 
 $sweb3->chainId = '0x3';//ropsten
+$from_address = '0x0000000000000000000000000000000000000000';
 $sendParams = [ 
-    'from' => SWP_ADDRESS,
-    'to' => '0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447', 
+    'from' =>   $from_address,  
+    'to' =>     '0x1111111111111111111111111111111111111111', 
     'gasPrice' => $sweb3->gasPrice,
     'gasLimit' => 210000,
     'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->getNonce(SWP_ADDRESS)
+    'nonce' => $sweb3->getNonce($from_address)
 ];    
 $result = $sweb3->send($sendParams); 
+```
+ 
+### batch calls & transactions
+```php 
+//enable batching
+$sweb3->batch(true);
+
+$sweb3->call('eth_blockNumber', []);
+$account_address = '0x0000000000000000000000000000000000000000';
+$sweb3->call('eth_getBalance', [$account_address]);
+
+//execute all batched calls in one request
+$res = $sweb3->executeBatch();
 ```
  
 ### Contract
@@ -90,16 +103,15 @@ $result = $sweb3->send($sendParams);
 ```php
 use SWeb3\SWeb3_Contract;
 
-$contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
+$contract = new SWeb3_contract($sweb3, '0x2222222222222222222222222222222222222222', '[ABI...]'); //'0x2222...' is contract address
   
 // call contract function
 $res = $contract->call('autoinc_tuple_a');
 
 // change function state
-$extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
+$extra_data = ['nonce' => $sweb3->getNonce('0x0000000000000000000000000000000000000000')]; //'0x0000...' is sender (from) address
 $result = $contract->send('Set_public_uint', 123,  $extra_data);
 ```
-
  
 
 # Examples
@@ -108,6 +120,7 @@ In the folder Examples/ there are some extended examples with call & send exampl
 
 - example.call.php
 - example.send.php
+- example.batch.php
 
  ### Example configuration
 
@@ -170,8 +183,9 @@ Kudos to the people from web3p & kornrunner. Never could have understood anythin
 
 # TODO
 
-- Contract creation
 - Events
+- Node accounts creation / interaction
+
 
 # License
 MIT
