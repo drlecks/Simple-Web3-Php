@@ -11,6 +11,7 @@
 
 namespace SWeb3; 
 
+use Exception;
 use SWeb3\Utils;
 use kornrunner\Ethereum\Transaction;
 
@@ -22,6 +23,26 @@ class Ethereum_CRPC
     public $id;
 }
 
+class PersonalData 
+{
+    private $sweb3;
+    public $address;
+    public $privateKey; 
+
+    function __construct($sweb3, $address, $privateKey)
+    {
+        $this->sweb3 = $sweb3;
+        $this->address = $address;
+        $this->privateKey = $privateKey;
+    }
+
+    function getNonce()
+    {
+        return $this->sweb3->getNonce($this->address);     
+    }
+}
+
+
 class SWeb3 
 {  
     private $provider;
@@ -29,6 +50,7 @@ class SWeb3
 
     public $utils;
 
+    public $personal;
     public $gasPrice;
     public $chainId;
 
@@ -42,9 +64,16 @@ class SWeb3
         $this->extra_curl_params = $extra_curl_params; 
 
         $this->utils = new Utils(); 
+        $this->gasPrice = null; 
 
         $this->do_batch = false; 
         $this->batched_calls = []; 
+    }
+
+
+    function setPersonalData($address, $privKey)
+    {
+        $this->personal = new PersonalData($this, $address, $privKey); 
     }
 
 
@@ -76,17 +105,16 @@ class SWeb3
         
         //prepare data
         $nonce = (isset($params['nonce'])) ? $params['nonce'] : '';
-        $gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice'] : '';
+        $gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice'] : $this->getGasPrice();
         $gasLimit = (isset($params['gasLimit'])) ? $params['gasLimit'] : '';
         $to = (isset($params['to'])) ? $params['to'] : '';
         $value = (isset($params['value'])) ? $params['value'] : '';
         $data = (isset($params['data'])) ? $params['data'] : '';
         $chainId = (isset($this->chainId)) ? $this->chainId : '0x0';
 
-        //sign transaction
-        $privateKey = SWP_PRIVATE_KEY;
+        //sign transaction 
         $transaction = new Transaction ($nonce, $gasPrice, $gasLimit, $to, $value, $data);
-        $signedTransaction = '0x' . $transaction->getRaw ($privateKey, $chainId);
+        $signedTransaction = '0x' . $transaction->getRaw ($this->personal->privateKey, $chainId);
     
         //SEND RAW TRANSACTION
         //format api data
@@ -129,8 +157,10 @@ class SWeb3
 
         //execute call
         $tuData = curl_exec($tuCurl); 
-        if (!curl_errno($tuCurl)) $info = curl_getinfo($tuCurl);  
-        else { echo 'Curl send error: ' . curl_error($tuCurl); }
+        if (!curl_errno($tuCurl)) 
+            $info = curl_getinfo($tuCurl);  
+        else 
+            throw new Exception('Curl send error: ' . curl_error($tuCurl));   
 
         curl_close($tuCurl); 
 
@@ -159,20 +189,34 @@ class SWeb3
         return $this->makeCurl($sendData);
     }
 
- 
 
     function getNonce($address)
     {
         $transactionCount = $this->call('eth_getTransactionCount', [$address, 'pending']);   
+
+        if(!isset($transactionCount->result)) {
+            throw new Exception('getNonce error. from address: ' . $address);   
+        }
+
+        var_dump($transactionCount); 
+
         return $this->utils->hexToDec($transactionCount->result);
     }
+ 
 
 
-    function refreshGasPrice()
+    function getGasPrice($force_refresh = false)
     {
-        $gasPriceResult = $this->call('eth_gasPrice'); 
-        $this->gasPrice = $this->utils->hexToDec($gasPriceResult->result);     
-        
+        if ($this->gasPrice == null || $force_refresh) {
+            $gasPriceResult = $this->call('eth_gasPrice'); 
+
+            if(!isset($gasPriceResult->result)) {
+                throw new Exception('getGasPrice error. ');   
+            }
+
+            $this->gasPrice = $this->utils->hexToDec($gasPriceResult->result); 
+        }
+             
         return $this->gasPrice;
     }
 }

@@ -36,11 +36,8 @@ $extra_curl_params[CURLOPT_USERPWD] = ':'.INFURA_PROJECT_SECRET;
 $sweb3 = new SWeb3(ETHEREUM_NET_ENDPOINT, $extra_curl_params);
 //send chain id, important for transaction signing 0x1 = main net, 0x3 ropsten... full list = https://chainlist.org/
 $sweb3->chainId = '0x3';//ropsten
-   
 
-//refresh gas price 
-//if you don't provide explicit gas price, the system will update current gas price from the net (call)
-$gasPrice = $sweb3->refreshGasPrice();
+$sweb3->setPersonalData(SWP_ADDRESS, SWP_PRIVATE_KEY); 
 
 //GENERAL OPERATIONS
 //uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
@@ -68,19 +65,23 @@ function SendETH()
     //send 0.001 eth to 0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447
 
     //estimate gas cost
+    //if you don't provide explicit gas price, the system will update current gas price from the net (call)
     $sendParams = [ 
-        'from' => SWP_ADDRESS,
+        'from' => $sweb3->personal->address,
         'to' => '0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447', 
-        'gasPrice' => $sweb3->gasPrice,
         'value' => $sweb3->utils->toWei('0.001', 'ether')
     ]; 
 
     //get function estimateGas
     $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
+
+    if(!isset($gasEstimateResult->result))
+        throw new Exception('estimation error: ' . json_encode($gasEstimateResult));   
+
     $gasEstimate = $sweb3->utils->hexToDec($gasEstimateResult->result);
  
     //prepare sending
-    $sendParams['nonce'] = $sweb3->getNonce(SWP_ADDRESS); 
+    $sendParams['nonce'] = $sweb3->personal->getNonce(); 
     $sendParams['gasLimit'] = $gasEstimate;
 
     $result = $sweb3->send($sendParams); 
@@ -95,7 +96,7 @@ function Contract_Set_public_uint()
     //nonce depends on the sender/signing address. it's the number of transactions made by this address, and can be used to override older transactions
     //it's used as a counter/queue
     //get nonce gives you the "desired next number" (makes a query to the provider), but you can setup more complex & efficient nonce handling ... at your own risk ;)
-    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
+    $extra_data = ['nonce' => $sweb3->personal->getNonce()];
 
     //$contract->send always populates: gasPrice, gasLimit, IF AND ONLY IF they are not already defined in $extra_data 
     //$contract->send always populates: to (contract address), data (ABI encoded $sendData), these can NOT be defined from outside
@@ -115,7 +116,7 @@ function Contract_AddTupleA()
     $send_data->address_a = SWP_ADDRESS;
     $send_data->bytes_a = 'Dynamic inserted tuple with SWP with tuple'; 
 
-    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
+    $extra_data = ['nonce' => $sweb3->personal->getNonce()];
     $result = $contract->send('AddTupleA', $send_data,  $extra_data);
      
     PrintCallResult('Contract_AddTupleA: ' . time(), $result);
@@ -128,10 +129,10 @@ function Contract_AddTupleA_Params()
     $send_data = [];
     $send_data['uint_a'] = time();
     $send_data['boolean_a'] = true;
-    $send_data['address_a'] = SWP_ADDRESS;
+    $send_data['address_a'] = $sweb3->personal->personal->address;
     $send_data['bytes_a'] = 'Dynamic inserted tuple with SWP by params'; 
 
-    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
+    $extra_data = ['nonce' => $sweb3->personal->getNonce()];
     $result = $contract->send('AddTupleA_Params', $send_data,  $extra_data);
      
     PrintCallResult('Contract_AddTupleA_Params: ' . time(), $result);
@@ -147,7 +148,7 @@ function AddTuple_B()
     $send_data->string_b = 'Dynamic inserted tuple with SWP with tuple'; 
     $send_data->string_array_b = ['Dynamic', 'inserted', 'tuple', 'with', 'SWP', 'with', 'tuple']; 
 
-    $extra_data = ['nonce' => $sweb3->getNonce(SWP_ADDRESS)];
+    $extra_data = ['nonce' => $sweb3->personal->getNonce()];
     $result = $contract->send('AddTuple_B', $send_data,  $extra_data);
      
     PrintCallResult('AddTuple_B: ' . time(), $result);

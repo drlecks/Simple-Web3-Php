@@ -23,13 +23,13 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 # Install
 
 ```
-composer require drlecks/simple-web3-php "^0.6.0"
+composer require drlecks/simple-web3-php "^0.7.0"
 ```
 
 Or you can add this line in composer.json
 
 ```
-"drlecks/simple-web3-php": "^0.6.0"
+"drlecks/simple-web3-php": "^0.7.0"
 ```
 
 
@@ -40,6 +40,11 @@ Or you can add this line in composer.json
 use SWeb3\SWeb3;
 //initialize SWeb3 main object
 $sweb3 = new SWeb3('http://ethereum.node.provider');
+
+//optional if not sending transactions
+$from_address = '0x0000000000000000000000000000000000000000';
+$from_address_private_key = '345346245645435....';
+$sweb3->setPersonalData($from_address, $from_address_private_key);
 ```
  
 ### general ethereum block information call:
@@ -49,21 +54,19 @@ $res = $sweb3->call('eth_blockNumber', []);
  
 ### refresh gas price 
 ```php 
-$gasPrice = $sweb3->refreshGasPrice();
+$gasPrice = $sweb3->getGasPrice();
 ``` 
 
 ### estimate  gas price (from send params)
 ```php
 use SWeb3\Utils;
 
-$sweb3->chainId = '0x3';//ropsten
-$from_address = '0x0000000000000000000000000000000000000000';
+$sweb3->chainId = '0x3';//ropsten 
 $sendParams = [ 
-    'from' =>   $from_address,  
+    'from' =>   $sweb3->personal->address,  
     'to' =>     '0x1111111111111111111111111111111111111111', 
-    'gasPrice' => $sweb3->gasPrice, 
     'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->getNonce($from_address)  
+    'nonce' => $sweb3->personal->getNonce()  
 ]; 
 $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```
@@ -72,15 +75,13 @@ $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```php
 use SWeb3\Utils;
 
-$sweb3->chainId = '0x3';//ropsten
-$from_address = '0x0000000000000000000000000000000000000000';
+//remember to set personal data first with a valid pair of address & private key
 $sendParams = [ 
-    'from' =>   $from_address,  
+    'from' =>   $sweb3->personal->address,  
     'to' =>     '0x1111111111111111111111111111111111111111', 
-    'gasPrice' => $sweb3->gasPrice,
     'gasLimit' => 210000,
     'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->getNonce($from_address)
+    'nonce' => $sweb3->personal->getNonce()
 ];    
 $result = $sweb3->send($sendParams); 
 ```
@@ -90,15 +91,17 @@ $result = $sweb3->send($sendParams);
 //enable batching
 $sweb3->batch(true);
 
-$sweb3->call('eth_blockNumber', []);
-$account_address = '0x0000000000000000000000000000000000000000';
-$sweb3->call('eth_getBalance', [$account_address]);
+$sweb3->call('eth_blockNumber', []); 
+$sweb3->call('eth_getBalance', [$sweb3->personal->address]);
 
 //execute all batched calls in one request
 $res = $sweb3->executeBatch();
+
+//batching has to be manually disabled
+$sweb3->batch(false); 
 ```
  
-### Contract
+### Contract interaction
 
 ```php
 use SWeb3\SWeb3_Contract;
@@ -109,18 +112,39 @@ $contract = new SWeb3_contract($sweb3, '0x22222222222222222222222222222222222222
 $res = $contract->call('autoinc_tuple_a');
 
 // change function state
-$extra_data = ['nonce' => $sweb3->getNonce('0x0000000000000000000000000000000000000000')]; //'0x0000...' is sender (from) address
+//remember to set the sign values and chain id first: $sweb3->setPersonalData() & $sweb3->chainId
+$extra_data = ['nonce' => $sweb3->personal->getNonce()]; //'0x0000...' is sender (from) address
 $result = $contract->send('Set_public_uint', 123,  $extra_data);
+```
+
+### Contract creation (deployment)
+
+```php
+use SWeb3\SWeb3_Contract;
+ 
+$creation_abi = '[abi...]';
+$contract = new SWeb3_contract($sweb3, '', $creation_abi);
+
+//set contract bytecode data
+$contract_bytecode = '123456789....';
+$contract->setBytecode($contract_bytecode);
+
+//remember to set the sign values and chain id first: $sweb3->setPersonalData() & $sweb3->chainId
+$extra_params = [  
+    'nonce' => $sweb3->personal->getNonce()
+];  
+$result = $contract->deployContract( [123123],  $extra_params); 
 ```
  
 
-# Examples
+# Provided Examples
 
 In the folder Examples/ there are some extended examples with call & send examples:
 
 - example.call.php
 - example.send.php
 - example.batch.php
+- example.contract_creation.php
 
  ### Example configuration
 

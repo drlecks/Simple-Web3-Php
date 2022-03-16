@@ -31,6 +31,7 @@ class ABI
 {
     private $baseJSON;
     public $functions;
+    public $constructor;
 
     private $num_zeros = 64;
 
@@ -39,14 +40,19 @@ class ABI
         $this->functions = [];
         $parsedJSON = json_decode($baseJSON);
 
-        foreach($parsedJSON as $func) {
-            if (isset($func->name)) $this->functions[$func->name] = $func; 
+        foreach($parsedJSON as $func)
+         {
+            if (isset($func->name)) 
+                $this->functions[$func->name] = $func; 
+            else if($func->type == 'constructor') 
+                $this->constructor = $func;
         }
     }
 
 
     public function GetFunction($function_name)
     {
+        if($function_name == '') return $this->constructor;
         return $this->functions[$function_name];
     }
  
@@ -79,11 +85,14 @@ class ABI
         $data = $this->forceWrapperArray($function, $data);
 
         $hashData = "0x";
-        //function signature (first 4 bytes)
-        $signature = $this->GetSignatureFromFunction($function);
-        $sha3 = Keccak::hash($signature, 256);
-        $hashData .= substr($sha3,0, 8);
 
+        if($function_name != '') {
+            //function signature (first 4 bytes) (not for constructor)
+            $signature = $this->GetSignatureFromFunction($function);
+            $sha3 = Keccak::hash($signature, 256);
+            $hashData .= substr($sha3,0, 8);
+        }
+         
         $hashData .= $this->EncodeGroup($function->inputs, $data);
         //var_dump($hashData);
         return $hashData;

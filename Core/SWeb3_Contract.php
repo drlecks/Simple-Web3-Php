@@ -23,6 +23,9 @@ class SWeb3_Contract
     private $s_web3;
     private $ABI;
     private $address;
+    private $bytecode;
+
+    public $constructor_function;
     public $call_functions;
     public $send_functions;
 
@@ -37,6 +40,11 @@ class SWeb3_Contract
         $this->FetchFunctions();
     }
 
+    function setBytecode($bytecode)
+    {
+        $this->bytecode = $bytecode;
+    }
+
 
     function FetchFunctions()
     { 
@@ -47,21 +55,29 @@ class SWeb3_Contract
         { 
             $function_name = $function->name;
 
-            $stateMutability = "";
-            if (isset($function->stateMutability)) $stateMutability = $function->stateMutability;
-
-            if($stateMutability == 'constructor') {
-                //constructor
+            if ($function->type == 'constructor') {
+                //$constructor_function = $function; (we already have this in the ABI class: ABI->constructor)
             }
-            else if($stateMutability == 'view' || $stateMutability == 'pure') {
-                //call 
-                $this->call_functions[$function_name] = $function;
-            }
-            else {
-                //send 
-                $this->send_functions[$function_name] = $function;
+            else{
+                $stateMutability = "";
+                if (isset($function->stateMutability)) $stateMutability = $function->stateMutability; 
+                
+                if($stateMutability == 'view' || $stateMutability == 'pure') {
+                    //call 
+                    $this->call_functions[$function_name] = $function;
+                }
+                else {
+                    //send 
+                    $this->send_functions[$function_name] = $function;
+                } 
             } 
         }
+    }
+
+
+    function existsFunction($function_list, $function_name)
+    {
+        return array_key_exists($function_name, $function_list);
     }
 
 
@@ -100,7 +116,6 @@ class SWeb3_Contract
         $extraParams['to'] =  $this->address;
         $extraParams['data'] =  $hashData; 
 
-        if (!isset($extraParams['gasPrice'])) $extraParams['gasPrice'] =  $this->sweb3->gasPrice;
         if (!isset($extraParams['gasLimit'])) $extraParams['gasLimit'] =  $this->estimateGas($extraParams);
         //var_dump($extraParams);
    
@@ -122,9 +137,35 @@ class SWeb3_Contract
         return $gasEstimate;
     }
 
-
-    function existsFunction($function_list, $function_name)
+ 
+    function deployContract($inputs = [], $extra_params = [])
     {
-        return array_key_exists($function_name, $function_list);
+        if(!isset($this->bytecode)) {
+            throw new Exception('ERROR: you need to initialize bytecode to deploy the contract'); 
+        }
+
+        $count_expected = count($this->ABI->constructor->inputs);
+        $count_received = count($inputs);
+        if ($count_expected != $count_received) {
+            throw new Exception('ERROR: contract constructor inputs number does not match... Expecting: ' . $count_expected . ' Received: ' . $count_received); 
+        }
+
+        $inputEncoded = $this->ABI->EncodeData('', $inputs); 
+        $extra_params['data'] = '0x' . $this->bytecode . Utils::stripZero($inputEncoded);
+ 
+        //get function estimateGas
+        if(!isset($extra_params['gasLimit'])) {
+            $gasEstimateResult = $this->sweb3->call('eth_estimateGas', [$extra_params]); 
+
+            if(!isset($gasEstimateResult->result))
+                throw new Exception('estimation error: ' . json_encode($gasEstimateResult));   
+
+            $extra_params['gasLimit'] = $this->sweb3->utils->hexToDec($gasEstimateResult->result); 
+        }
+
+        //get gas price
+        if(!isset($extra_params['gasPrice']))  $extra_params['gasPrice'] = $this->sweb3->getGasPrice(); 
+         
+        return $this->sweb3->send($extra_params); 
     }
 }

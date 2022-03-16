@@ -37,14 +37,14 @@ $extra_curl_params[CURLOPT_USERPWD] = ':'.INFURA_PROJECT_SECRET;
 $sweb3 = new SWeb3(ETHEREUM_NET_ENDPOINT, $extra_curl_params);
 //send chain id, important for transaction signing 0x1 = main net, 0x3 ropsten... full list = https://chainlist.org/
 $sweb3->chainId = '0x3';//ropsten
-
+$sweb3->setPersonalData(SWP_ADDRESS, SWP_PRIVATE_KEY); 
 
 //enable batching
 $sweb3->batch(true);
 
-//we need the gas price and nonce for signing the send eth transaction
-$sweb3->call('eth_gasPrice');  
-$sweb3->call('eth_getTransactionCount', [SWP_ADDRESS, 'pending']);   
+//we need the nonce for signing the send eth transaction
+$sweb3->call('eth_gasPrice');   
+$sweb3->call('eth_getTransactionCount', [$sweb3->personal->address, 'pending']);   
 $res = $sweb3->executeBatch();
 
 PrintCallResult('Gas price & nonce:', $res);
@@ -67,11 +67,10 @@ $contract->call('autoinc_tuple_a');
 //contract: input string[][] returns tuple[][] 
 $contract->call('Mirror_StringArray', [['text1', 'text22'], ['text333', 'text4444'], ['text55555', 'text666666']]);
 
-//SEND 
-
+//SEND  
 //send 0.001 eth
 $sendParams = [ 
-    'from' => SWP_ADDRESS,
+    'from' => $sweb3->personal->address,
     'to' => '0x3Fc47d792BD1B0f423B0e850F4E2AD172d408447', 
     'gasPrice' => $gasPrice,
     'gasLimit' => 21000, //good estimation for eth transaction only

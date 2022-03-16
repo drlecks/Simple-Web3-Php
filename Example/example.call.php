@@ -33,7 +33,9 @@ $extra_curl_params[CURLOPT_USERPWD] = ':'.INFURA_PROJECT_SECRET;
 
 //initialize SWeb3 main object
 $sweb3 = new SWeb3(ETHEREUM_NET_ENDPOINT, $extra_curl_params);
-  
+
+//we are not sending signed transactions here, so we don't need to set a private key
+$sweb3->setPersonalData(SWP_ADDRESS, '');
 
 //general ethereum block information 
 $res = $sweb3->call('eth_blockNumber', []);
