@@ -30,22 +30,40 @@ use kornrunner\Keccak;
 class ABI
 {
     private $baseJSON;
-    public $functions;
     public $constructor;
+    public $functions;
+    public $events; 
+    public $other_objects; 
+
+    //dictionary of encoded signature => function
+    public $events_encoded;
 
     private $num_zeros = 64;
+    
 
     public function Init($baseJSON)
     {
         $this->functions = [];
+        $this->events = [];
+        $this->other_objects = [];
+        $this->events_encoded = [];
         $parsedJSON = json_decode($baseJSON);
 
         foreach($parsedJSON as $func)
-         {
-            if (isset($func->name)) 
-                $this->functions[$func->name] = $func; 
-            else if($func->type == 'constructor') 
+         { 
+            if($func->type == 'constructor') {
                 $this->constructor = $func;
+            }
+            else if($func->type == 'event') {
+                $this->events[$func->name] = $func; 
+                $this->events_encoded[$this->GetSignatureFromEvent($func)] = $func;
+            }
+            else if($func->type == 'function') {
+                $this->functions[$func->name] = $func; 
+            } 
+            else {
+                $this->other_objects []= $func; 
+            }  
         }
     }
 
@@ -54,6 +72,18 @@ class ABI
     {
         if($function_name == '') return $this->constructor;
         return $this->functions[$function_name];
+    }
+
+
+    public function GetEvent($event_name)
+    { 
+        return $this->events[$event_name];
+    }
+
+
+    public function GetEventFromHash($event_hash)
+    { 
+        return $this->events_encoded[$event_hash];
     }
  
 
@@ -72,6 +102,30 @@ class ABI
         {
             var_dump("parameter error: " . $abi_string);
         }
+    }
+
+
+    public function isCallFunction($function_name)
+    {
+        $function = $this->GetFunction($function_name);
+        if ($function == null) return false;
+
+        $stateMutability = "";
+        if (isset($function->stateMutability)) $stateMutability = $function->stateMutability; 
+
+        return ($stateMutability == 'pure' || $stateMutability == 'view');
+    }
+
+
+    public function isSendFunction($function_name)
+    {
+        $function = $this->GetFunction($function_name); 
+        if ($function == null) return false;
+
+        $stateMutability = "";
+        if (isset($function->stateMutability)) $stateMutability = $function->stateMutability; 
+
+        return ($stateMutability != 'pure' && $stateMutability != 'view');
     }
 
 
@@ -98,15 +152,21 @@ class ABI
         return $hashData;
     }
 
+
+    public function GetSignatureFromEvent($function)
+    { 
+        $signature = $this->GetSignatureFromFunction($function);
+        return  '0x' . Keccak::hash($signature, 256);
+    }
+
     
     private function GetSignatureFromFunction($function)
     {
         $signature = $function->name . $this->GetSignatureFromFunction_Inptuts($function->inputs); 
-        //var_dump($signature); 
         return $signature;
     }
- 
 
+ 
     private function GetSignatureFromFunction_Inptuts($function_inputs)
     {
         $signature = "(";

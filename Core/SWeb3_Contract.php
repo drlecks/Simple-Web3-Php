@@ -24,10 +24,7 @@ class SWeb3_Contract
     private $ABI;
     private $address;
     private $bytecode;
-
-    public $constructor_function;
-    public $call_functions;
-    public $send_functions;
+  
 
     function __construct($sweb3, $contractAddress, $contractABI)
     {
@@ -35,55 +32,19 @@ class SWeb3_Contract
         $this->address = $contractAddress;
 
         $this->ABI = new ABI();
-        $this->ABI->Init($contractABI); 
-
-        $this->FetchFunctions();
+        $this->ABI->Init($contractABI);  
     }
+
 
     function setBytecode($bytecode)
     {
         $this->bytecode = $bytecode;
     }
-
-
-    function FetchFunctions()
-    { 
-        $this->call_functions = [];
-        $this->send = [];
-
-        foreach($this->ABI->functions as $key => $function)
-        { 
-            $function_name = $function->name;
-
-            if ($function->type == 'constructor') {
-                //$constructor_function = $function; (we already have this in the ABI class: ABI->constructor)
-            }
-            else{
-                $stateMutability = "";
-                if (isset($function->stateMutability)) $stateMutability = $function->stateMutability; 
-                
-                if($stateMutability == 'view' || $stateMutability == 'pure') {
-                    //call 
-                    $this->call_functions[$function_name] = $function;
-                }
-                else {
-                    //send 
-                    $this->send_functions[$function_name] = $function;
-                } 
-            } 
-        }
-    }
-
-
-    function existsFunction($function_list, $function_name)
-    {
-        return array_key_exists($function_name, $function_list);
-    }
-
+  
 
     function call($function_name, $callData = null, $extraParams = null)
-    { 
-        if(!$this->existsFunction($this->call_functions, $function_name)) {
+    {  
+        if (!$this->ABI->isCallFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a call function in this contract');  
         }
 
@@ -105,19 +66,17 @@ class SWeb3_Contract
 
     function send($function_name, $sendData, $extraParams = null)
     { 
-        if(!$this->existsFunction($this->send_functions, $function_name)) {
-            throw new Exception('ERROR: ' . $function_name . ' does not exist as a send function in this contract');  
+        if (!$this->ABI->isSendFunction($function_name)) {
+            throw new Exception('ERROR: ' . $function_name . ' does not exist as a send function (changing state transaction) in this contract');  
         }
  
         $hashData = $this->ABI->EncodeData($function_name, $sendData); 
-        //var_dump($hashData);
        
         if ($extraParams == null) $extraParams = [];
         $extraParams['to'] =  $this->address;
         $extraParams['data'] =  $hashData; 
 
         if (!isset($extraParams['gasLimit'])) $extraParams['gasLimit'] =  $this->estimateGas($extraParams);
-        //var_dump($extraParams);
    
         $result = $this->sweb3->send($extraParams);
         return $result;
@@ -167,5 +126,29 @@ class SWeb3_Contract
         if(!isset($extra_params['gasPrice']))  $extra_params['gasPrice'] = $this->sweb3->getGasPrice(); 
          
         return $this->sweb3->send($extra_params); 
+    }
+
+
+    //returns all event logs. each with 2 extra parameters "decoded_data" and "event_anme"
+    function getLogs($minBlock = null, $maxBlock = null, $topics = null)
+    {
+        $result = $this->sweb3->getLogs($this->address, $minBlock, $maxBlock, $topics);
+        $logs = $result->result;
+
+        foreach($logs as $log) 
+        {
+            $event = $this->ABI->GetEventFromHash($log->topics[0]);
+            if($event != null) {
+                $log->event_name = $event->name;
+
+                $encoded = substr($log->data, 2);  
+                $log->decoded_data = $this->ABI->DecodeGroup($event->inputs, $encoded, 0);
+            }
+            else  {
+                $log->event_name = 'unknown'; 
+            }
+        }
+ 
+        return $logs;
     }
 }

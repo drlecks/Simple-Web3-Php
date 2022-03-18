@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 
-/**
- * This file is part of simple-web3-php package.
- * 
- * (c) Alex Cabrera  
- * 
- * @author Alex Cabrera 
- */
-
 pragma solidity >=0.7.0 <0.9.0;
- 
+
+/**
+ * @title Owner
+ * @dev Set & change owner
+ */
 contract SWP_contract 
 {
     uint256 public autoinc_tuple_a;
@@ -33,6 +29,11 @@ contract SWP_contract
 
     mapping(uint => Tuple_A) public map_tuples_a;
     Tuple_B[] private array_tuples_b;
+
+
+    event Event_Set_public_uint(uint newValue);
+    event Event_AddTuple_A(Tuple_A newObject);
+    event Event_AddTuple_B(Tuple_B newObject);
 
 
     //CONSTRUCTOR
@@ -118,6 +119,7 @@ contract SWP_contract
     function Set_public_uint(uint new_uint) public
     {
         public_uint = new_uint;
+        emit Event_Set_public_uint(public_uint);
     }
 
     function Set_public_int(int new_int) public
@@ -135,6 +137,8 @@ contract SWP_contract
     {
         autoinc_tuple_a++;
         map_tuples_a[autoinc_tuple_a] = new_tuple_a;
+
+        emit Event_AddTuple_A(new_tuple_a);
     }
 
     function AddTupleA_Params(uint uint_a, bool boolean_a, address address_a, bytes memory bytes_a) public 
@@ -145,6 +149,8 @@ contract SWP_contract
         tuple.boolean_a = boolean_a;
         tuple.address_a = address_a;
         tuple.bytes_a = bytes_a; 
+
+        emit Event_AddTuple_A(tuple);
     }
 
 
@@ -154,6 +160,8 @@ contract SWP_contract
 
         array_tuples_b[array_tuples_b.length-1].string_array_b.push(new_tuple_b.string_b);
         array_tuples_b[array_tuples_b.length-1].string_array_b.push(new_tuple_b.string_b);
+
+        emit Event_AddTuple_B(new_tuple_b);
     }
 
     function AddTuple_B_Params(uint uint_b, string memory string_b, string[] memory string_array_b) public 
@@ -168,6 +176,8 @@ contract SWP_contract
         array_tuples_b[array_tuples_b.length-1].string_array_b.push(tuple.string_b);
         array_tuples_b[array_tuples_b.length-1].string_array_b.push(tuple.string_b);
         array_tuples_b[array_tuples_b.length-1].string_array_b.push(tuple.string_b);
+
+        emit Event_AddTuple_B(tuple);
     }
 
 

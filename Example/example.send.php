@@ -42,14 +42,14 @@ $sweb3->setPersonalData(SWP_ADDRESS, SWP_PRIVATE_KEY);
 //GENERAL OPERATIONS
 //uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
-SendETH();
+//SendETH();
 
 //CONTRACT
 //uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
 //initialize contract from address and ABI string
 $contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
-//Contract_Set_public_uint();
+Contract_Set_public_uint();
 //Contract_AddTupleA();
 //Contract_AddTupleA_Params();
 //AddTuple_B();

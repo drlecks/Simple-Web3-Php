@@ -20,7 +20,7 @@ use stdClass;
 use SWeb3\SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3_Contract;
-
+use phpseclib\Math\BigInteger as BigNumber;
 
 //IMPORTANT
 //Remember that this is an example showing how to execute the common features of calling / getting state from the ethereum rpc api
@@ -96,7 +96,14 @@ PrintCallResult('GetTuples_B', $res);
 //returns tuple[][] 
 $res = $contract->call('Mirror_StringArray', [['text1', 'text22'], ['text333', 'text4444'], ['text55555', 'text666666']]);
 PrintCallResult('Mirror_StringArray', $res);
- 
+
+
+//EVENTS
+$res = $contract->getLogs();
+PrintCallResult('getLogs', $res);
+
+
+//EXIT
 exit(0);
     
  

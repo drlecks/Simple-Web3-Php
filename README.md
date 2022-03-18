@@ -23,13 +23,13 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 # Install
 
 ```
-composer require drlecks/simple-web3-php "^0.7.0"
+composer require drlecks/simple-web3-php "^0.8.0"
 ```
 
 Or you can add this line in composer.json
 
 ```
-"drlecks/simple-web3-php": "^0.7.0"
+"drlecks/simple-web3-php": "^0.8.0"
 ```
 
 
@@ -58,9 +58,7 @@ $gasPrice = $sweb3->getGasPrice();
 ``` 
 
 ### estimate  gas price (from send params)
-```php
-use SWeb3\Utils;
-
+```php 
 $sweb3->chainId = '0x3';//ropsten 
 $sendParams = [ 
     'from' =>   $sweb3->personal->address,  
@@ -73,8 +71,6 @@ $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
  
 ### send 0.001 ether to address
 ```php
-use SWeb3\Utils;
-
 //remember to set personal data first with a valid pair of address & private key
 $sendParams = [ 
     'from' =>   $sweb3->personal->address,  
@@ -117,6 +113,14 @@ $extra_data = ['nonce' => $sweb3->personal->getNonce()]; //'0x0000...' is sender
 $result = $contract->send('Set_public_uint', 123,  $extra_data);
 ```
 
+### Contract events (logs)
+
+```php
+//optional parameters fromBlock, toBlock, topics
+//default values -> '0x0', 'latest', null (all events/logs from this contract) 
+$res = $contract->getLogs();
+``` 
+
 ### Contract creation (deployment)
 
 ```php
@@ -135,7 +139,17 @@ $extra_params = [
 ];  
 $result = $contract->deployContract( [123123],  $extra_params); 
 ```
- 
+
+
+### Usual required includes
+
+```php 
+use SWeb3\SWeb3;                            //always needed, to create the Web3 object
+use SWeb3\Utils;                            //sweb3 helper classes (for example, hex conversion operations)
+use SWeb3\SWeb3_Contract;                   //contract creation and interaction
+use phpseclib\Math\BigInteger as BigNumber; //BigInt handling
+use stdClass;                               //for object interaction 
+```
 
 # Provided Examples
 
@@ -206,8 +220,7 @@ Kudos to the people from web3p & kornrunner. Never could have understood anythin
 
 
 # TODO
-
-- Events
+ 
 - Node accounts creation / interaction
 
 

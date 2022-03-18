@@ -11,6 +11,7 @@
 
 namespace SWeb3; 
 
+use stdClass;
 use Exception;
 use SWeb3\Utils;
 use kornrunner\Ethereum\Transaction;
@@ -198,8 +199,6 @@ class SWeb3
             throw new Exception('getNonce error. from address: ' . $address);   
         }
 
-        var_dump($transactionCount); 
-
         return $this->utils->hexToDec($transactionCount->result);
     }
  
@@ -218,6 +217,27 @@ class SWeb3
         }
              
         return $this->gasPrice;
+    }
+
+    //general info: https://docs.alchemy.com/alchemy/guides/eth_getlogs
+    //default blocks: from-> 0x0 to-> latest
+    //TOPICS: https://eth.wiki/json-rpc/API#a-note-on-specifying-topic-filters 
+    function getLogs($related_address, $minBlock = null, $maxBlock = null, $topics = null)
+    { 
+        $data = new stdClass();
+        $data->address = $related_address;
+
+        $data->fromBlock = ($minBlock != null) ? $minBlock : '0x0';
+        $data->toBlock = ($maxBlock != null) ? $maxBlock : 'latest';
+        if ($topics != null) $data->topics = $topics;
+ 
+        $result = $this->call('eth_getLogs', [$data]); 
+ 
+        if(!isset($result->result) || !is_array($result->result)) {
+            throw new Exception('getLogs error: ' . $result);   
+        }
+
+        return $result;
     }
 }
 
