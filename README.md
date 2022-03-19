@@ -17,6 +17,7 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 - Full ABIv2 encode/decode 
 - Contract creation
 - Contract interaction (call/send)
+- Contract Events/logs with filters
 - Examples provided interacting with simple types, strings, tuples, arrays, arrays of tuples with arrays, multi-dimension arrays... 
 
 
@@ -109,7 +110,7 @@ $res = $contract->call('autoinc_tuple_a');
 
 // change function state
 //remember to set the sign values and chain id first: $sweb3->setPersonalData() & $sweb3->chainId
-$extra_data = ['nonce' => $sweb3->personal->getNonce()]; //'0x0000...' is sender (from) address
+$extra_data = ['nonce' => $sweb3->personal->getNonce()]; 
 $result = $contract->send('Set_public_uint', 123,  $extra_data);
 ```
 
@@ -134,9 +135,7 @@ $contract_bytecode = '123456789....';
 $contract->setBytecode($contract_bytecode);
 
 //remember to set the sign values and chain id first: $sweb3->setPersonalData() & $sweb3->chainId
-$extra_params = [  
-    'nonce' => $sweb3->personal->getNonce()
-];  
+$extra_params = ['nonce' => $sweb3->personal->getNonce()];  
 $result = $contract->deployContract( [123123],  $extra_params); 
 ```
 
