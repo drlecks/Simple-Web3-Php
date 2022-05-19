@@ -49,8 +49,8 @@ $res = $sweb3->executeBatch();
 
 PrintCallResult('Gas price & nonce:', $res);
 
-$gasPrice = $sweb3->utils->hexToDec($res[0]->result);  
-$nonce = $sweb3->utils->hexToDec($res[1]->result); 
+$gasPrice = $sweb3->utils->hexToBn($res[0]->result);  
+$nonce = $sweb3->utils->hexToBn($res[1]->result); 
 
 
 //CALL
@@ -96,10 +96,45 @@ function PrintCallResult($callName, $result)
 
     if(is_array($result))
     {
-        foreach($result as $key => $part) echo "Part [" . $key . "]-> ". json_encode($part) . "<br/>";
+        foreach($result as $key => $part) 
+		{
+			echo "Part [" . $key . "]-> ". PrintObject($part) . "<br/>";
+		}
     }
     else {
-        echo "Result -> ". json_encode($result) . "<br/>";
+        echo "Result -> ". PrintObject($result) . "<br/>";
     }
     
+}
+
+
+
+
+function PrintObject($x)
+{ 
+	if ($x instanceof BigNumber)
+	{
+		return $x . '';
+	}
+	
+	if (is_object($x)) {
+		$x = (array)($x); 
+	}
+
+	if (is_array($x))
+	{
+		$text = "[";
+		$first = true;
+		foreach($x as $key => $value)
+		{
+			if ($first)  	$first = false;
+			else 			$text .= ", ";
+
+			$text .= $key . " : " . PrintObject($value);
+		}
+
+		return $text . "]"; 
+	}
+	 
+	return $x . '';
 }

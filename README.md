@@ -47,7 +47,33 @@ $from_address = '0x0000000000000000000000000000000000000000';
 $from_address_private_key = '345346245645435....';
 $sweb3->setPersonalData($from_address, $from_address_private_key);
 ```
- 
+
+### Convert values 
+Most calls return Hex encoded strings to represent numbers. 
+
+Hex to Big Number: 
+```php 
+use SWeb3\Utils;
+
+$res = $sweb3->call('eth_blockNumber', []);
+$bigNum = $sweb3->utils->hexToBn($res->result);
+``` 
+
+Number to BigNumber:
+```php 
+$bigNum = $sweb3->utils->ToBn(123);
+``` 
+
+Get average-human readable string representation from Big Number:
+```php 
+$s_number = $bigNum->toString();
+``` 
+
+Format 1 ether to wei (unit required for ether values in transactions):
+```php 
+$sweb3->utils->toWei('0.001', 'ether');
+``` 
+
 ### general ethereum block information call:
 ```php 
 $res = $sweb3->call('eth_blockNumber', []);
@@ -212,10 +238,10 @@ Don't base your code structure on this example. This example does not represent 
 
 Kudos to the people from web3p & kornrunner. Never could have understood anything from web3 if it wasn't for those sources.
 
-- Utils library forked from web3p/web3.php
+- Utils library forked & extended from web3p/web3.php
 - Transaction signing from kornrunner/ethereum-offline-raw-tx
 - sha3 encoding from kornrunner/keccak
-- phpseclib\Math for BigNumber interaction
+- phpseclib\Math for BigNumber interaction (https://github.com/phpseclib/phpseclib/blob/master/phpseclib/Math/BigInteger.php)
 
 
 # TODO

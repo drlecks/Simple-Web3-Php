@@ -20,12 +20,14 @@ abstract class VariableType
     const String = 3;
     const Address = 4;
     const Int = 5;
-    const Bool = 6;
+    const UInt = 6;
+	const Bool = 7;
 }
 
 
 use stdClass; 
 use kornrunner\Keccak;
+use phpseclib\Math\BigInteger as BigNumber;
 
 class ABI
 {
@@ -94,6 +96,8 @@ class ABI
         else if (str_contains($abi_string, 'bytes'))    return VariableType::String;
         else if (str_contains($abi_string, 'byte[]'))   return VariableType::String;
         //static
+		
+		else if (str_contains($abi_string, 'uint') )     return VariableType::UInt;
         else if (str_contains($abi_string, 'int') )     return VariableType::Int;
         else if (str_contains($abi_string, 'fixed') )   return VariableType::Int;
         else if (str_contains($abi_string, 'bool'))     return VariableType::Bool;
@@ -162,18 +166,18 @@ class ABI
     
     private function GetSignatureFromFunction($function)
     {
-        $signature = $function->name . $this->GetSignatureFromFunction_Inptuts($function->inputs); 
+        $signature = $function->name . $this->GetSignatureFromFunction_Inputs($function->inputs); 
         return $signature;
     }
 
  
-    private function GetSignatureFromFunction_Inptuts($function_inputs)
+    private function GetSignatureFromFunction_Inputs($function_inputs)
     {
         $signature = "(";
         foreach($function_inputs as $input)
         {
             $type = $input->type;
-            if ($type == 'tuple') $type = $this->GetSignatureFromFunction_Inptuts($input->components);
+            if ($type == 'tuple') $type = $this->GetSignatureFromFunction_Inputs($input->components);
             else if ($type == 'uint' || $type == 'int') $type .= '256';
             else if ($type == 'uint[]') $type = 'uint256[]';
             else if ($type == 'int[]') $type = 'int256[]';
@@ -260,7 +264,7 @@ class ABI
         $currentDynamicIndex = count($inputData) * $this->num_zeros / 2;
         
         //array lenght
-        $hashData = $this->EncodeInput_Int(count($inputData));;
+        $hashData = $this->EncodeInput_UInt(count($inputData));
           
         foreach($inputData as $pos => $element) 
         {      
@@ -290,7 +294,7 @@ class ABI
         $hash = "";
 
         if($round == 1)
-        {  
+        {   
             //change byte[] or byte[xx] to string as they are encoded the same way
             if(str_contains($input->type, 'byte[')) {
                 $input->type = 'string' .  substr($input->type, strpos($input->type, ']'));
@@ -305,23 +309,26 @@ class ABI
                 $clean_type = substr($input->type, 0, $last_array_marker); 
  
                 $input->hash =  $this->EncodeInput_Array($clean_type, $inputData);
-                $res = $this->EncodeInput_Int($currentDynamicIndex); 
+                $res = $this->EncodeInput_UInt($currentDynamicIndex); 
                 return $res;
                 
             }
             else if  ($varType == VariableType::Tuple)
             {
                 $input->hash =  $this->EncodeGroup($input->components, $inputData);
-                $res = $this->EncodeInput_Int($currentDynamicIndex); 
+                $res = $this->EncodeInput_UInt($currentDynamicIndex); 
                 return $res;
             }
             else if ($varType == VariableType::String) {
                 $input->hash = $this->EncodeInput_String($inputData);
-                $res = $this->EncodeInput_Int($currentDynamicIndex); 
+                $res = $this->EncodeInput_UInt($currentDynamicIndex); 
                 return $res;
             }
             //static
-            else if ($varType == VariableType::Int) { 
+            else if ($varType == VariableType::UInt) { 
+                return $this->EncodeInput_UInt($inputData);
+            }
+			else if ($varType == VariableType::Int) { 
                 return $this->EncodeInput_Int($inputData);
             }
             else if ($varType == VariableType::Bool) { 
@@ -343,9 +350,24 @@ class ABI
     }
 
 
-    private function EncodeInput_Int($data)
+    private function EncodeInput_UInt($data)
     {  
         $hash = $this->AddZeros(dechex($data), true); 
+        return  $hash;
+    }
+
+	private function EncodeInput_Int($data)
+    {   
+		if($data instanceof BigNumber) { 
+			if($data->toString()[0] == '-')
+				$hash = $this->AddNegativeF($data->toHex(true), true); 
+			else
+				$hash = $this->AddZeros($data->toHex(true), true); 
+		} 
+		else {
+			$hash = $this->AddZerosOrF(dechex($data), true); 
+		} 
+		
         return  $hash;
     }
 
@@ -365,14 +387,14 @@ class ABI
     private function EncodeInput_String($data)
     { 
         //length + hexa string
-        $hash = $this->EncodeInput_Int(strlen($data)).$this->AddZeros(bin2hex($data), false);  
+        $hash = $this->EncodeInput_UInt(strlen($data)).$this->AddZeros(bin2hex($data), false);  
 
         return  $hash;
     }
 
 
     private function AddZeros($data, $add_left)
-    {
+    { 
         $total = $this->num_zeros - strlen($data);
         $res = $data;
 
@@ -380,6 +402,38 @@ class ABI
             for($i=0; $i < $total; $i++) {
                 if($add_left)   $res = '0'.$res;
                 else            $res .= '0';
+            }
+        }
+         
+        return $res;
+    }
+
+	private function AddNegativeF($data, $add_left)
+    { 
+        $total = $this->num_zeros - strlen($data);
+        $res = $data;
+
+        if($total > 0) {
+            for($i=0; $i < $total; $i++) {
+                if($add_left)   $res = 'f'.$res;
+                else            $res .= 'f';
+            }
+        }
+         
+        return $res;
+    }
+
+	private function AddZerosOrF($data, $add_left)
+    { 
+		$valueToAdd = (strtolower($data[0]) == 'f' && strlen($data) == 16) ? 'f' : '0';
+
+        $total = $this->num_zeros - strlen($data);
+        $res = $data;
+
+        if($total > 0) {
+            for($i=0; $i < $total; $i++) {
+                if($add_left)   $res = $valueToAdd.$res;
+                else            $res .= $valueToAdd;
             }
         }
          
@@ -406,7 +460,8 @@ class ABI
         $first_index = $index;
         $elem_index = 1;
         $tuple_count = 1;
-        $array_count = 1;
+        $array_count = 1; 
+		$output_count = count($outputs);
 
         foreach ($outputs as $output)
         {
@@ -424,43 +479,45 @@ class ABI
                 $clean_type = substr($output->type, 0, $last_array_marker);
 
                 $var_name = $output->name != '' ? $output->name : 'array_'.$array_count; 
-                $dynamic_data_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2; 
+                $dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2; 
                 $group->$var_name = $this->DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start); 
                 $array_count++;
             }
             else if ($varType == VariableType::Tuple) { 
                 $var_name = $output->name != '' ? $output->name : 'tuple_'.$tuple_count;
-                $dynamic_data_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2;
+                $dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
                 $group->$var_name = $this->DecodeGroup($output->components, $encoded, $dynamic_data_start);
                 $tuple_count++;
             }
             else if ($varType == VariableType::String) { 
                 $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
-                $dynamic_data_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2;
+                $dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
                 $group->$var_name = $this->DecodeInput_String($encoded, $dynamic_data_start);  
             }
             //static
             else
             {
-                $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
-                $group->$var_name = $this->DecodeInput_Generic($this->GetParameterType($output->type), $encoded, $index); 
+				$var_name = 'result';
+				if($output->name != '')  $var_name = $output->name;
+				else if($output_count > 1) 'elem_'.$elem_index; 
+                $group->$var_name = $this->DecodeInput_Generic($this->GetParameterType($output->type), $encoded, $index);  
             }  
 
             $elem_index++;
             $index += $this->num_zeros;
-        }
-        
+        } 
 
         return $group; 
     } 
 
+	
     private function DecodeInput_Array($output, $array_inner_type, $encoded, $index)
     {
         $array = [];
         $first_index = $index;  
         $varType = $this->GetParameterType($array_inner_type);
 
-        $length = $this->DecodeInput_Int($encoded, $first_index); 
+        $length = $this->DecodeInput_UInt_Internal($encoded, $first_index); 
         $first_index += $this->num_zeros;
         $index += $this->num_zeros;
   
@@ -471,19 +528,19 @@ class ABI
                 $last_array_marker = strrpos($array_inner_type, '[');  
                 $clean_type = substr($array_inner_type, 0, $last_array_marker);
  
-                $element_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2;
+                $element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
                 $res = $this->DecodeInput_Array($output, $clean_type, $encoded, $element_start); 
             }
             else if($varType == VariableType::Tuple) {
-                $element_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2; 
+                $element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2; 
                 $res = $this->DecodeGroup($output->components, $encoded, $element_start); 
             }
             else if($varType == VariableType::String) { 
-                $element_start = $first_index + $this->DecodeInput_Int($encoded, $index) * 2;
+                $element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
                 $res = $this->DecodeInput_String($encoded, $element_start);  
             }
             else {
-                $this->DecodeInput_Generic($varType, $encoded, $index); 
+                $res = $this->DecodeInput_Generic($varType, $encoded, $index); 
             }
             
             $array []= $res;
@@ -500,7 +557,10 @@ class ABI
         if($variableType == VariableType::String) {
             return $this->DecodeInput_String($encoded, $start);
         }
-        else if($variableType == VariableType::Int) {
+        else if($variableType == VariableType::UInt) {
+            return $this->DecodeInput_UInt($encoded, $start);
+        }
+		else if($variableType == VariableType::Int) {
             return $this->DecodeInput_Int($encoded, $start);
         }
         else if($variableType == VariableType::Bool) {
@@ -511,12 +571,30 @@ class ABI
         }
     }
  
-
-    private function DecodeInput_Int($encoded, $start)
+	private function DecodeInput_UInt_Internal($encoded, $start)
     {
         $partial = substr($encoded, $start, 64);   
         $partial = $this->RemoveZeros($partial, true); 
         return hexdec($partial);
+    }
+
+    private function DecodeInput_UInt($encoded, $start)
+    {
+        $partial = substr($encoded, $start, 64);   
+        $partial = $this->RemoveZeros($partial, true); 
+        //return hexdec($partial);
+		return new BigNumber($partial, 16);
+    }
+
+	private function DecodeInput_Int($encoded, $start)
+    {
+        $partial = substr($encoded, $start, 64);   
+		$first_byte = hexdec($partial[0]);
+
+		$partial = $this->RemoveZeros($partial, true); 
+		$partial_big = new BigNumber($partial, -16);
+ 
+        return $partial_big;
     }
 
 
@@ -536,7 +614,7 @@ class ABI
 
     private function DecodeInput_String($encoded, $start)
     { 
-        $length = $this->DecodeInput_Int($encoded, $start); 
+        $length = $this->DecodeInput_UInt_Internal($encoded, $start); 
         $start += $this->num_zeros;
 
         $partial = substr($encoded, $start, $length * 2); 

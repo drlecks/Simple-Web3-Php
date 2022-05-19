@@ -58,7 +58,7 @@ class SWeb3_Contract
         $result = $this->sweb3->call('eth_call', $data);
          
         if(isset($result->result))
-            return $this->ABI->DecodeData($function_name, $result->result);
+            return $this->DecodeData($function_name, $result->result);
         else 
             return $result;
     }
@@ -78,9 +78,16 @@ class SWeb3_Contract
 
         if (!isset($extraParams['gasLimit'])) $extraParams['gasLimit'] =  $this->estimateGas($extraParams);
    
+		//exit;
         $result = $this->sweb3->send($extraParams);
         return $result;
     }
+
+
+	function DecodeData($function_name, $data)
+	{
+		return $this->ABI->DecodeData($function_name, $data);
+	}
 
 
     function estimateGas($extraParams)
@@ -91,7 +98,7 @@ class SWeb3_Contract
             throw new Exception('ERROR: estimateGas error: ' . $gasEstimateResult->error->message); 
         }
 
-        $gasEstimate = $this->sweb3->utils->hexToDec($gasEstimateResult->result);
+        $gasEstimate = $this->sweb3->utils->hexToBn($gasEstimateResult->result);
 
         return $gasEstimate;
     }
@@ -119,7 +126,7 @@ class SWeb3_Contract
             if(!isset($gasEstimateResult->result))
                 throw new Exception('estimation error: ' . json_encode($gasEstimateResult));   
 
-            $extra_params['gasLimit'] = $this->sweb3->utils->hexToDec($gasEstimateResult->result); 
+            $extra_params['gasLimit'] = $this->sweb3->utils->hexToBn($gasEstimateResult->result); 
         }
 
         //get gas price

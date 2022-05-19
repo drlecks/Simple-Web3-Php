@@ -70,16 +70,16 @@ class Utils
 
 
     /**
-     * hexToDec
+     * hexToBn
      * decoding hex number into decimal 
      * 
      * @param string  $value 
      * @return  int
      */
-    public static function hexToDec($value)
+    public static function hexToBn($value)
     {
         $value = self::stripZero($value);
-        return new BigNumber($value, 16);//hexdec($value);
+        return (new BigNumber($value, 16));
     }
 
     /**
@@ -140,7 +140,7 @@ class Utils
     public static function isZeroPrefixed($value)
     {
         if (!is_string($value)) {
-            throw new InvalidArgumentException('The value to isZeroPrefixed function must be string.');
+            //throw new InvalidArgumentException('The value to isZeroPrefixed function must be string.');
         }
         return (strpos($value, '0x') === 0);
     }
@@ -552,9 +552,11 @@ class Utils
     {
         if ($number instanceof BigNumber){
             $bn = $number;
-        } elseif (is_int($number)) {
+        } 
+		elseif (is_int($number)) {
             $bn = new BigNumber($number);
-        } elseif (is_numeric($number)) {
+        } 
+		elseif (is_numeric($number)) {
             $number = (string) $number;
 
             if (self::isNegative($number)) {
@@ -583,7 +585,8 @@ class Utils
             if (isset($negative1)) {
                 $bn = $bn->multiply($negative1);
             }
-        } elseif (is_string($number)) {
+        } 
+		elseif (is_string($number)) {
             $number = mb_strtolower($number);
 
             if (self::isNegative($number)) {
@@ -602,7 +605,8 @@ class Utils
             if (isset($negative1)) {
                 $bn = $bn->multiply($negative1);
             }
-        } else {
+        } 
+		else {
             throw new InvalidArgumentException('toBn number must be BigNumber, string or int.');
         }
         return $bn;

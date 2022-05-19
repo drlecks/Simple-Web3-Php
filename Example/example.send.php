@@ -39,17 +39,21 @@ $sweb3->chainId = '0x3';//ropsten
 
 $sweb3->setPersonalData(SWP_ADDRESS, SWP_PRIVATE_KEY); 
 
+
 //GENERAL OPERATIONS
-//uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
+
+//ALERT!! uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
 //SendETH();
 
-//CONTRACT
-//uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
 
+//CONTRACT 
 //initialize contract from address and ABI string
-$contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
-Contract_Set_public_uint();
+$contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI); 
+
+//ALERT!! uncomment all functions you want to execute. mind that every call will make a state changing transaction to the selected net.
+
+//Contract_Set_public_int();
 //Contract_AddTupleA();
 //Contract_AddTupleA_Params();
 //AddTuple_B();
@@ -78,7 +82,7 @@ function SendETH()
     if(!isset($gasEstimateResult->result))
         throw new Exception('estimation error: ' . json_encode($gasEstimateResult));   
 
-    $gasEstimate = $sweb3->utils->hexToDec($gasEstimateResult->result);
+    $gasEstimate = $sweb3->utils->hexToBn($gasEstimateResult->result);
  
     //prepare sending
     $sendParams['nonce'] = $sweb3->personal->getNonce(); 
@@ -103,6 +107,29 @@ function Contract_Set_public_uint()
     $result = $contract->send('Set_public_uint', time(),  $extra_data);
     
     PrintCallResult('Contract_Set_public_uint: ' . time(), $result);
+}
+
+
+function Contract_Set_public_int()
+{
+    global $sweb3, $contract;
+ 
+    //nonce depends on the sender/signing address. it's the number of transactions made by this address, and can be used to override older transactions
+    //it's used as a counter/queue
+    //get nonce gives you the "desired next number" (makes a query to the provider), but you can setup more complex & efficient nonce handling ... at your own risk ;)
+    $extra_data = ['nonce' => $sweb3->personal->getNonce()];
+
+	//$contract->send always populates: gasPrice, gasLimit, IF AND ONLY IF they are not already defined in $extra_data 
+    //$contract->send always populates: to (contract address), data (ABI encoded $sendData), these can NOT be defined from outside 
+
+	//the input data formatter accepts numbers and BigNumbers. Just mind that numbers might result in incorrect results for their limited max value.
+	$raw_value = -time();
+	$format_value = Utils::toBn($raw_value); 
+
+    $result = $contract->send('Set_public_int', $format_value,  $extra_data);
+    //also valid: $result = $contract->send('Set_public_int', $raw_value,  $extra_data);
+
+    PrintCallResult('Contract_Set_public_int: ' . $raw_value, $result);
 }
 
 
@@ -158,6 +185,37 @@ function AddTuple_B()
 
 function PrintCallResult($callName, $result)
 {
-    echo "<br/> Call -> <b>". $callName . "</b><br/>";
-    echo "Result -> ". json_encode($result) . "<br/>";
+    echo "<br/> Send -> <b>". $callName . "</b><br/>";
+
+    echo "Result -> " . PrintObject($result) . "<br/>"; 
+}
+
+
+function PrintObject($x)
+{ 
+	if ($x instanceof BigNumber)
+	{
+		return $x . '';
+	}
+	
+	if (is_object($x)) {
+		$x = (array)($x); 
+	}
+
+	if (is_array($x))
+	{
+		$text = "[";
+		$first = true;
+		foreach($x as $key => $value)
+		{
+			if ($first)  	$first = false;
+			else 			$text .= ", ";
+
+			$text .= $key . " : " . PrintObject($value);
+		}
+
+		return $text . "]"; 
+	}
+	 
+	return $x . '';
 }

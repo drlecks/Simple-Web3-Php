@@ -132,6 +132,7 @@ class SWeb3
         }
         else {
             $sendData = json_encode($ethRequest);  
+			//var_dump( $sendData);
             return $this->makeCurl($sendData);
         } 
     } 
@@ -199,7 +200,7 @@ class SWeb3
             throw new Exception('getNonce error. from address: ' . $address);   
         }
 
-        return $this->utils->hexToDec($transactionCount->result);
+        return $this->utils->hexToBn($transactionCount->result);
     }
  
 
@@ -213,7 +214,7 @@ class SWeb3
                 throw new Exception('getGasPrice error. ');   
             }
 
-            $this->gasPrice = $this->utils->hexToDec($gasPriceResult->result); 
+            $this->gasPrice = $this->utils->hexToBn($gasPriceResult->result); 
         }
              
         return $this->gasPrice;

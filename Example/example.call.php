@@ -39,24 +39,22 @@ $sweb3->setPersonalData(SWP_ADDRESS, '');
 
 //general ethereum block information 
 $res = $sweb3->call('eth_blockNumber', []);
-PrintCallResult('eth_blockNumber', $res);
-
+PrintCallResult('eth_blockNumber', $res); 
 
 //CONTRACT
 
 //initialize contract from address and ABI string
-$contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
-  
+$contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI); 
 
 //GETTERS - direct public variables  
 $res = $contract->call('autoinc_tuple_a');
-PrintCallResult('autoinc_tuple_a', $res);
+PrintCallResult('autoinc_tuple_a', $res); 
  
 $res = $contract->call('public_uint');
-PrintCallResult('public_uint', $res);
+PrintCallResult('public_uint', $res); 
  
 $res = $contract->call('public_int');
-PrintCallResult('public_int', $res);
+PrintCallResult('public_int', $res);  
 
 $res = $contract->call('public_string');
 PrintCallResult('public_string', $res);
@@ -111,5 +109,36 @@ exit(0);
 function PrintCallResult($callName, $result)
 {
     echo "<br/> Call -> <b>". $callName . "</b><br/>";
-    echo "Result -> ". json_encode($result) . "<br/>";
+
+    echo "Result -> " . PrintObject($result) . "<br/>"; 
+}
+
+
+function PrintObject($x)
+{ 
+	if ($x instanceof BigNumber)
+	{
+		return $x . '';
+	}
+	
+	if (is_object($x)) {
+		$x = (array)($x); 
+	}
+
+	if (is_array($x))
+	{
+		$text = "[";
+		$first = true;
+		foreach($x as $key => $value)
+		{
+			if ($first)  	$first = false;
+			else 			$text .= ", ";
+
+			$text .= $key . " : " . PrintObject($value);
+		}
+
+		return $text . "]"; 
+	}
+	 
+	return $x . '';
 }
