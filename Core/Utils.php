@@ -611,4 +611,10 @@ class Utils
         }
         return $bn;
     }
+
+
+	public static function GetRandomHex(int $length)
+	{
+		return bin2hex(openssl_random_pseudo_bytes($length / 2));   
+	}
 }
