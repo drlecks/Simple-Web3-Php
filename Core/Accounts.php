@@ -17,12 +17,67 @@ use Elliptic\EC;
 use kornrunner\Keccak;
 use stdClass;
 use Exception;
+
  
 class Account
 {
 	public string $privateKey;
 	public string $publicKey;
+
+	public function sign(string $message)
+	{ 
+		//https://ethereum.stackexchange.com/questions/35425/web3-js-eth-sign-vs-eth-accounts-sign-producing-different-signatures
+		$pk = $this->privateKey;
+		if (substr($pk, 0, 2) != '0x') $pk  = '0x' . $pk;
+	
+		// 64 hex characters + hex-prefix
+		if (strlen($pk) != 66) {
+			throw new Exception("Private key must be length 64 + 2  (" . strlen($pk) . " provided)");
+		}
+
+		$hash = Accounts::hashMessage($message);
+
+		$ec = new EC('secp256k1'); 
+		$ecPrivateKey = $ec->keyFromPrivate($pk, 'hex');  
+
+		$signature = $ecPrivateKey->sign($hash, false, ['canonical' => true]); 
+		$r = str_pad($signature->r->toString(16), 64, '0', STR_PAD_LEFT);
+		$s = str_pad($signature->s->toString(16), 64, '0', STR_PAD_LEFT);
+		$v = dechex($signature->recoveryParam + 27);
+
+		//https://ethereum.stackexchange.com/questions/86485/create-signed-message-without-json-rpc-node-in-php
+		$r = str_pad($signature->r->toString(16), 64, '0', STR_PAD_LEFT);
+		$s = str_pad($signature->s->toString(16), 64, '0', STR_PAD_LEFT);
+
+		$res = new stdClass();
+		$res->message = $message; 
+		$res->messageHash = $hash; 
+		$res->v = $v; 
+		$res->r = $r; 
+		$res->s = $s; 
+		$res->signature = $signature; 
+
+		return $res;
+
+		//echo "Signed Hello world is:\n";
+		//echo "Using my script:\n";
+		//echo "0x$r$s$v\n";
+		//echo "Using MEW:\n";
+		//echo "0x2f52dfb196b75398b78c0e6c6aee8dc08d7279f2f88af5588ad7728f1e93dd0a479a710365c91ba649deb6c56e2e16836ffc5857cfd1130f159aebd05377d3a01c\n";
+
+		//web3.eth.accounts.sign('Some data', '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318');
+		//> {
+		//	message: 'Some data',
+		//	messageHash: '0x1da44b586eb0729ff70a73c326926f6ed5a25f5b056e7f47fbc6e58d86871655',
+		//	v: '0x1c',
+		//	r: '0xb91467e570a6466aa9e9876cbcd013baba02900b8979d43fe208a4a4f339f5fd',
+		//	s: '0x6007e74cd82e037b800186422fc2da167c747ef045e5d18a5f5d4300f8e1a029',
+		///	signature: '0xb91467e570a6466aa9e9876cbcd013baba02900b8979d43fe208a4a4f339f5fd6007e74cd82e037b800186422fc2da167c747ef045e5d18a5f5d4300f8e1a0291c'
+		//}
+	}
 }
+
+
 
 class Accounts
 {
@@ -48,7 +103,7 @@ class Accounts
 	 
 		// 64 hex characters + hex-prefix
 		if (!$ignoreLength && strlen($privateKey) !== 64) {
-			throw new Exception("Private key must be 32 bytes long (" . strlen($privateKey) . " provided)");
+			throw new Exception("Private key must be 32 bytes long (" . (strlen($privateKey) / 2) . " provided)");
 		}
 		
 		//get public key
@@ -68,52 +123,19 @@ class Accounts
 
 	public static function hashMessage(string $message)
 	{
-		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256.
+		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256. 
+		$message = "\x19Ethereum Signed Message:\n" . strlen($message) . $message;
 
-		$hash = Keccak::hash($signature, "\x19Ethereum Signed Message:\n" . strlen($message) . $message);
-
+		$hash = Keccak::hash($message, 256);
 		return $hash;
 
 		//web3.eth.accounts.hashMessage("Hello World")
- 		//"0xa1de988600a42c4b4ab089b619297c17d53cffae5d5120d82d8a92d0bb3b78f2"
-		// the below results in the same hash
-		//web3.eth.accounts.hashMessage(web3.utils.utf8ToHex("Hello World"))
-		//> "0xa1de988600a42c4b4ab089b619297c17d53cffae5d5120d82d8a92d0bb3b78f2"
-	}
- 
-
-	//https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
-	public static function encrypt(string $privateKey, string $password)
-	{
-		//web3.eth.accounts.encrypt(privateKey, password); 
-		//Encrypts a private key to the web3 keystore v3 standard.
-		/*
-		cipher: 'aes-128-ctr',
-        kdf: 'scrypt',
-        kdfparams: {
-            dklen: 32,
-            salt: '4531b3c174cc3ff32a6a7a85d6761b410db674807b2d216d022318ceee50be10',
-            n: 262144,
-            r: 8,
-            p: 1
-		*/
- 
-
-		//returns ciphertext
-	}
-
-
-	public static function decrypt(string $ciphertext, string $password)
-	{
-		//web3.eth.accounts.encrypt(privateKey, password); 
-		//Encrypts a private key to the web3 keystore v3 standard.
-		//'aes-128-ctr'
-	}
+ 		//"0xa1de988600a42c4b4ab089b619297c17d53cffae5d5120d82d8a92d0bb3b78f2" 
+	} 
 
 
 	public static function ecKeyToAddress($pubkey) 
 	{
 		return "0x" . substr(Keccak::hash(substr(hex2bin($pubkey->encode("hex")), 1), 256), 24);
-	}
-	
+	} 
 }

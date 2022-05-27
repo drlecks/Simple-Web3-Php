@@ -151,7 +151,7 @@ class ABI
             $hashData .= substr($sha3,0, 8);
         }
          
-        $hashData .= $this->EncodeGroup($function->inputs, $data);
+        $hashData .= self::EncodeGroup($function->inputs, $data);
         //var_dump($hashData);
         return $hashData;
     }
@@ -227,7 +227,7 @@ class ABI
     }
 
      
-    public function EncodeGroup($inputs, $data)
+    public static function EncodeGroup($inputs, $data)
     { 
         $hashData = "";
         $currentDynamicIndex = count($inputs) * $this->num_zeros / 2; 
@@ -315,7 +315,7 @@ class ABI
             }
             else if  ($varType == VariableType::Tuple)
             {
-                $input->hash =  $this->EncodeGroup($input->components, $inputData);
+                $input->hash =  self::EncodeGroup($input->components, $inputData);
                 $res = $this->EncodeInput_UInt($currentDynamicIndex); 
                 return $res;
             }
