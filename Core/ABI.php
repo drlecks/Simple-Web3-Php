@@ -40,7 +40,7 @@ class ABI
     //dictionary of encoded signature => function
     public $events_encoded;
 
-    private $num_zeros = 64;
+    const NUM_ZEROS = 64;
     
 
     public function Init($baseJSON)
@@ -230,7 +230,7 @@ class ABI
     public static function EncodeGroup($inputs, $data)
     { 
         $hashData = "";
-        $currentDynamicIndex = count($inputs) * $this->num_zeros / 2; 
+        $currentDynamicIndex = count($inputs) * self::NUM_ZEROS / 2; 
         
         //parameters
         $i = 0; 
@@ -251,7 +251,7 @@ class ABI
         }
 
         if (count($inputs) == 0) {
-            $hashData .= $this->num_zeros / 2;
+            $hashData .= self::NUM_ZEROS / 2;
         } 
 
         return $hashData;
@@ -261,7 +261,7 @@ class ABI
     private function EncodeInput_Array($input_type, $inputData)
     { 
         $inputs = [];
-        $currentDynamicIndex = count($inputData) * $this->num_zeros / 2;
+        $currentDynamicIndex = count($inputData) * self::NUM_ZEROS / 2;
         
         //array lenght
         $hashData = $this->EncodeInput_UInt(count($inputData));
@@ -282,7 +282,7 @@ class ABI
         }
 
         if (count($inputs) == 0) {
-            $hashData .= $this->num_zeros / 2;
+            $hashData .= self::NUM_ZEROS / 2;
         } 
 
         return $hashData;
@@ -395,7 +395,7 @@ class ABI
 
     private function AddZeros($data, $add_left)
     { 
-        $total = $this->num_zeros - strlen($data);
+        $total = self::NUM_ZEROS - strlen($data);
         $res = $data;
 
         if($total > 0) {
@@ -410,7 +410,7 @@ class ABI
 
 	private function AddNegativeF($data, $add_left)
     { 
-        $total = $this->num_zeros - strlen($data);
+        $total = self::NUM_ZEROS - strlen($data);
         $res = $data;
 
         if($total > 0) {
@@ -427,7 +427,7 @@ class ABI
     { 
 		$valueToAdd = (strtolower($data[0]) == 'f' && strlen($data) == 16) ? 'f' : '0';
 
-        $total = $this->num_zeros - strlen($data);
+        $total = self::NUM_ZEROS - strlen($data);
         $res = $data;
 
         if($total > 0) {
@@ -504,7 +504,7 @@ class ABI
             }  
 
             $elem_index++;
-            $index += $this->num_zeros;
+            $index += self::NUM_ZEROS;
         } 
 
         return $group; 
@@ -518,8 +518,8 @@ class ABI
         $varType = $this->GetParameterType($array_inner_type);
 
         $length = $this->DecodeInput_UInt_Internal($encoded, $first_index); 
-        $first_index += $this->num_zeros;
-        $index += $this->num_zeros;
+        $first_index += self::NUM_ZEROS;
+        $index += self::NUM_ZEROS;
   
         for($i = 0; $i < $length; $i++)
         {  
@@ -544,7 +544,7 @@ class ABI
             }
             
             $array []= $res;
-            $index += $this->num_zeros; 
+            $index += self::NUM_ZEROS; 
         }
 
         return $array;
@@ -615,7 +615,7 @@ class ABI
     private function DecodeInput_String($encoded, $start)
     { 
         $length = $this->DecodeInput_UInt_Internal($encoded, $start); 
-        $start += $this->num_zeros;
+        $start += self::NUM_ZEROS;
 
         $partial = substr($encoded, $start, $length * 2); 
         return hex2bin($partial);
