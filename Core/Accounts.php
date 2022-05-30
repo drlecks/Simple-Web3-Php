@@ -51,11 +51,11 @@ class Account
 
 		$res = new stdClass();
 		$res->message = $message; 
-		$res->messageHash = $hash; 
-		$res->v = $v; 
-		$res->r = $r; 
-		$res->s = $s; 
-		$res->signature = $signature; 
+		$res->messageHash = $hash;  
+		$res->r = '0x'.$r; 
+		$res->s = '0x'.$s; 
+		$res->v = '0x'.$v; 
+		$res->signature = '0x'.$r.$s.$v;//$signature; 
 
 		return $res;
 
