@@ -24,7 +24,18 @@ class Account
 	public string $privateKey;
 	public string $publicKey;
 
+
 	public function sign(string $message)
+	{ 
+		$hash = Accounts::hashMessage($message);  
+		$signature = $this->signRaw($hash);
+		$signature->message = $message;
+
+		return $signature;
+	}
+
+
+	public function signRaw(string $hash)
 	{ 
 		//https://ethereum.stackexchange.com/questions/35425/web3-js-eth-sign-vs-eth-accounts-sign-producing-different-signatures
 		$pk = $this->privateKey;
@@ -34,24 +45,19 @@ class Account
 		if (strlen($pk) != 66) {
 			throw new Exception("Private key must be length 64 + 2  (" . strlen($pk) . " provided)");
 		}
-
-		$hash = Accounts::hashMessage($message);
-
+			
 		$ec = new EC('secp256k1'); 
 		$ecPrivateKey = $ec->keyFromPrivate($pk, 'hex');  
 
-		$signature = $ecPrivateKey->sign($hash, false, ['canonical' => true]); 
+		//https://ethereum.stackexchange.com/questions/86485/create-signed-message-without-json-rpc-node-in-php
+		$signature = $ecPrivateKey->sign($hash, ['canonical' => true, "n" => null,]); 
 		$r = str_pad($signature->r->toString(16), 64, '0', STR_PAD_LEFT);
 		$s = str_pad($signature->s->toString(16), 64, '0', STR_PAD_LEFT);
 		$v = dechex($signature->recoveryParam + 27);
-
-		//https://ethereum.stackexchange.com/questions/86485/create-signed-message-without-json-rpc-node-in-php
-		$r = str_pad($signature->r->toString(16), 64, '0', STR_PAD_LEFT);
-		$s = str_pad($signature->s->toString(16), 64, '0', STR_PAD_LEFT);
-
+ 
 		$res = new stdClass();
 		$res->message = $message; 
-		$res->messageHash = $hash;  
+		$res->messageHash = '0x'.$hash;  
 		$res->r = '0x'.$r; 
 		$res->s = '0x'.$s; 
 		$res->v = '0x'.$v; 
@@ -75,6 +81,7 @@ class Account
 		///	signature: '0xb91467e570a6466aa9e9876cbcd013baba02900b8979d43fe208a4a4f339f5fd6007e74cd82e037b800186422fc2da167c747ef045e5d18a5f5d4300f8e1a0291c'
 		//}
 	}
+
 }
 
 
@@ -124,9 +131,13 @@ class Accounts
 	public static function hashMessage(string $message)
 	{
 		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256. 
-		$message = "\x19Ethereum Signed Message:\n" . strlen($message) . $message;
+		if (substr($message, 0, 2) == '0x') $message  = substr($message, 2);
+		if(ctype_xdigit($message)) $message = hex2bin($message);
 
-		$hash = Keccak::hash($message, 256);
+		$msglen = strlen($message);
+		$msg    = hex2bin("19") . "Ethereum Signed Message:" . hex2bin("0A") . $msglen . $message;
+		$hash   = Keccak::hash($msg, 256);
+
 		return $hash;
 
 		//web3.eth.accounts.hashMessage("Hello World")
@@ -138,4 +149,5 @@ class Accounts
 	{
 		return "0x" . substr(Keccak::hash(substr(hex2bin($pubkey->encode("hex")), 1), 256), 24);
 	} 
+	
 }
