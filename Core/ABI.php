@@ -349,10 +349,15 @@ class ABI
         return  $hash;
     }
 
-
-    private static function EncodeInput_UInt($data)
+	private static function EncodeInput_UInt($data)
     {  
-        $hash = self::AddZeros(dechex($data), true); 
+		if($data instanceof BigNumber) { 
+			$hash = self::AddZeros($data->toHex(true), true); 
+		} 
+		else {
+			$hash = self::AddZeros(dechex($data), true); 
+		} 
+       
         return  $hash;
     }
 
