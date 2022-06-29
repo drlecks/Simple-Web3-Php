@@ -23,7 +23,7 @@ class Account
 {
 	public string $privateKey;
 	public string $publicKey;
-
+	public string $address;
 
 	public function sign(string $message)
 	{ 
@@ -55,8 +55,7 @@ class Account
 		$s = str_pad($signature->s->toString(16), 64, '0', STR_PAD_LEFT);
 		$v = dechex($signature->recoveryParam + 27);
  
-		$res = new stdClass();
-		$res->message = $message; 
+		$res = new stdClass(); 
 		$res->messageHash = '0x'.$hash;  
 		$res->r = '0x'.$r; 
 		$res->s = '0x'.$s; 
@@ -145,9 +144,48 @@ class Accounts
 	} 
 
 
-	public static function ecKeyToAddress($pubkey) 
+	public static function ecKeyToAddress($pubEcKey) 
 	{
-		return "0x" . substr(Keccak::hash(substr(hex2bin($pubkey->encode("hex")), 1), 256), 24);
+		return self::publicKeyToAddress($pubEcKey->encode("hex"));
 	} 
+
+
+	public static function publicKeyToAddress($pubkey) 
+	{
+		if (substr($pubkey, 0, 2) == '0x') $pubkey  = substr($pubkey, 2);
+		return "0x" . substr(Keccak::hash(substr(hex2bin($pubkey), 1), 256), 24);
+	} 
+
+
+	public static function signedMessageToPublicKey(string $message, string $signature) : string
+	{
+		$msglen = strlen($message);
+		$hash   = Keccak::hash("\x19Ethereum Signed Message:\n{$msglen}{$message}", 256);
+		$sign   = ["r" => substr($signature, 2, 64), 
+				   "s" => substr($signature, 66, 64)];
+		$recid  = ord(hex2bin(substr($signature, 130, 2))) - 27; 
+		if ($recid != ($recid & 1)) 
+			return false;
+	
+		$ec = new EC('secp256k1');
+		$pubEcKey = $ec->recoverPubKey($hash, $sign, $recid);
+	
+		return $pubEcKey->encode("hex");
+	}
+
+
+	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey) : bool
+	{ 
+		return $publicKey == self::signedMessageToPublicKey($message, $signature);
+	}
+
+
+	public static function verifySignatureWithAddress(string $message, string $signature, string $address) : bool
+	{
+		$publicKey = self::signedMessageToPublicKey($message, $signature);
+		$message_address = self::publicKeyToAddress($publicKey);
+
+		return $address == $message_address;
+	}
 	
 }
