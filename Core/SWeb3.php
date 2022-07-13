@@ -151,7 +151,6 @@ class SWeb3
             }
         }
 
-        curl_setopt($tuCurl, CURLOPT_PORT , 443);
         curl_setopt($tuCurl, CURLOPT_POST, 1);
         curl_setopt($tuCurl, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-length: ".strlen($sendData)));
         curl_setopt($tuCurl, CURLOPT_POSTFIELDS, $sendData);
