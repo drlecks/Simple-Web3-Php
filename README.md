@@ -13,7 +13,9 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 - Customizable curl calls
 - Call: get net state
 - Send signed transactions
-- Batch call requests and signed transactions
+- Batch call requests and signed transactions 
+- Address & private key creation
+- Message signing
 - Full ABIv2 encode/decode 
 - Contract creation
 - Contract interaction (call/send)
@@ -40,7 +42,7 @@ Or you can add this line in composer.json
 ```php
 use SWeb3\SWeb3;
 //initialize SWeb3 main object
-$sweb3 = new SWeb3('http://ethereum.node.provider');
+$sweb3 = new SWeb3('http://ethereum.node.provider:optional.node.port');
 
 //optional if not sending transactions
 $from_address = '0x0000000000000000000000000000000000000000';
@@ -123,6 +125,23 @@ $res = $sweb3->executeBatch();
 //batching has to be manually disabled
 $sweb3->batch(false); 
 ```
+
+### Account
+```php 
+use SWeb3\Accounts; 
+use SWeb3\Account;
+
+//create new account privateKey/address (returns Account)
+$account = Accounts::create();
+
+//retrieve account (address) from private key 
+$account2 = Accounts::privateKeyToAccount('...private_key...');
+
+//sign message with account
+$res = $account2->sign('Some data'); 
+
+```
+
  
 ### Contract interaction
 
@@ -172,6 +191,8 @@ $result = $contract->deployContract( [123123],  $extra_params);
 use SWeb3\SWeb3;                            //always needed, to create the Web3 object
 use SWeb3\Utils;                            //sweb3 helper classes (for example, hex conversion operations)
 use SWeb3\SWeb3_Contract;                   //contract creation and interaction
+use SWeb3\Accounts;                   		//account creation
+use SWeb3\Account;                   		//single account management (signing)
 use phpseclib\Math\BigInteger as BigNumber; //BigInt handling
 use stdClass;                               //for object interaction 
 ```
@@ -183,6 +204,7 @@ In the folder Examples/ there are some extended examples with call & send exampl
 - example.call.php
 - example.send.php
 - example.batch.php
+- example.account.php
 - example.contract_creation.php
 
  ### Example configuration
@@ -236,12 +258,11 @@ Don't base your code structure on this example. This example does not represent 
 
 # Modules
 
-Kudos to the people from web3p & kornrunner. Never could have understood anything from web3 if it wasn't for those sources.
-
 - Utils library forked & extended from web3p/web3.php
-- Transaction signing from kornrunner/ethereum-offline-raw-tx
-- sha3 encoding from kornrunner/keccak
-- phpseclib\Math for BigNumber interaction (https://github.com/phpseclib/phpseclib/blob/master/phpseclib/Math/BigInteger.php)
+- Transaction signing: kornrunner/ethereum-offline-raw-tx
+- sha3 encoding: from kornrunner/keccak
+- BigNumber interaction: phpseclib\Math  
+- Asymetric key handling: simplito/elliptic-php
 
 
 # TODO

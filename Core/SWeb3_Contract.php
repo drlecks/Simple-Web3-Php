@@ -15,8 +15,7 @@ namespace SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3;
 use stdClass;
-use Exception;
-use phpseclib\Math\BigInteger as BigNumber;
+use Exception; 
  
 class SWeb3_Contract
 {
@@ -26,7 +25,7 @@ class SWeb3_Contract
     private $bytecode;
   
 
-    function __construct($sweb3, $contractAddress, $contractABI)
+    function __construct(SWeb3 $sweb3, string $contractAddress, $contractABI)
     {
         $this->sweb3 = $sweb3;
         $this->address = $contractAddress;
@@ -42,7 +41,7 @@ class SWeb3_Contract
     }
   
 
-    function call($function_name, $callData = null, $extraParams = null)
+    function call(string $function_name, $callData = null, $extraParams = null)
     {  
         if (!$this->ABI->isCallFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a call function in this contract');  
@@ -64,7 +63,7 @@ class SWeb3_Contract
     }
 
 
-    function send($function_name, $sendData, $extraParams = null)
+    function send(string $function_name, $sendData, $extraParams = null)
     { 
         if (!$this->ABI->isSendFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a send function (changing state transaction) in this contract');  
@@ -84,7 +83,7 @@ class SWeb3_Contract
     }
 
 
-	function DecodeData($function_name, $data)
+	function DecodeData(string $function_name, $data)
 	{
 		return $this->ABI->DecodeData($function_name, $data);
 	}
@@ -104,7 +103,7 @@ class SWeb3_Contract
     }
 
  
-    function deployContract($inputs = [], $extra_params = [])
+    function deployContract(array $inputs = [], array $extra_params = [])
     {
         if(!isset($this->bytecode)) {
             throw new Exception('ERROR: you need to initialize bytecode to deploy the contract'); 
@@ -137,7 +136,7 @@ class SWeb3_Contract
 
 
     //returns all event logs. each with 2 extra parameters "decoded_data" and "event_anme"
-    function getLogs($minBlock = null, $maxBlock = null, $topics = null)
+    function getLogs(string $minBlock = null, string $maxBlock = null, $topics = null)
     {
         $result = $this->sweb3->getLogs($this->address, $minBlock, $maxBlock, $topics);
         $logs = $result->result;

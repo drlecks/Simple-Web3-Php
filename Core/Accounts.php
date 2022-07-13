@@ -127,7 +127,7 @@ class Accounts
 	}
   
 
-	public static function hashMessage(string $message)
+	public static function hashMessage(string $message) : string
 	{
 		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256. 
 		if (substr($message, 0, 2) == '0x') $message  = substr($message, 2);
@@ -144,13 +144,13 @@ class Accounts
 	} 
 
 
-	public static function ecKeyToAddress($pubEcKey) 
+	public static function ecKeyToAddress($pubEcKey) : string
 	{
 		return self::publicKeyToAddress($pubEcKey->encode("hex"));
 	} 
 
 
-	public static function publicKeyToAddress($pubkey) 
+	public static function publicKeyToAddress(string $pubkey) 
 	{
 		if (substr($pubkey, 0, 2) == '0x') $pubkey  = substr($pubkey, 2);
 		return "0x" . substr(Keccak::hash(substr(hex2bin($pubkey), 1), 256), 24);

@@ -18,8 +18,10 @@
 
 namespace SWeb3;
 
-use RuntimeException;
+
+use stdClass;
 use InvalidArgumentException;  
+use kornrunner\Keccak;
 use phpseclib\Math\BigInteger as BigNumber;
 
 class Utils

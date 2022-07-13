@@ -16,11 +16,7 @@ ini_set('display_startup_errors', '1');
 include_once("../vendor/autoload.php");
 include_once("example.config.php");
  
-use stdClass;
-use SWeb3\SWeb3;
 use SWeb3\Accounts; 
-use SWeb3\Account; 
-use SWeb3\Utils; 
 
 //IMPORTANT
 //Remember that this is an example showing how to execute the common features of calling / getting state from the ethereum rpc api
