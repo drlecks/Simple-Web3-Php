@@ -48,6 +48,7 @@ class SWeb3
 {  
     private $provider;
     private $extra_curl_params;
+    private $extra_headers;
 
     public $utils;
 
@@ -59,10 +60,11 @@ class SWeb3
     private $batched_calls;
 
 
-    function __construct($url_provider, $extra_curl_params = null)
+    function __construct($url_provider, $extra_curl_params = null, $extra_headers)
     {
         $this->provider = $url_provider;
-        $this->extra_curl_params = $extra_curl_params; 
+        $this->extra_curl_params = $extra_curl_params;
+        $this->extra_headers = $extra_headers;
 
         $this->utils = new Utils(); 
         $this->gasPrice = null; 
@@ -152,7 +154,12 @@ class SWeb3
         }
 
         curl_setopt($tuCurl, CURLOPT_POST, 1);
-        curl_setopt($tuCurl, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-length: ".strlen($sendData)));
+
+        $headers = array("Content-Type: application/json", "Content-length: ".strlen($sendData));
+        if($this->extra_headers) {
+            $headers = array_merge($headers, $this->extra_headers);
+        }
+        curl_setopt($tuCurl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($tuCurl, CURLOPT_POSTFIELDS, $sendData);
 
         //execute call
