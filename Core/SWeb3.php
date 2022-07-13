@@ -60,7 +60,7 @@ class SWeb3
     private $batched_calls;
 
 
-    function __construct($url_provider, $extra_curl_params = null, $extra_headers)
+    function __construct($url_provider, $extra_curl_params = null, $extra_headers = null)
     {
         $this->provider = $url_provider;
         $this->extra_curl_params = $extra_curl_params;
