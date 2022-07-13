@@ -241,7 +241,7 @@ class ABI
             if (is_array($data) && $inputData == null) $inputData = $data[$var_name];
 
             $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
-             
+  
             if(isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
             $i++;
         }
@@ -253,7 +253,7 @@ class ABI
         if (count($inputs) == 0) {
             $hashData .= self::NUM_ZEROS / 2;
         } 
-
+ 
         return $hashData;
     }
 
@@ -300,7 +300,8 @@ class ABI
                 $input->type = 'string' .  substr($input->type, strpos($input->type, ']'));
             } 
 
-            $varType = self::GetParameterType($input->type);
+	    	$input_type = is_string($input) ? $input : $input->type;
+            $varType = self::GetParameterType($input_type);
 
             //dynamic
             if(str_contains($input->type, '['))
@@ -400,7 +401,7 @@ class ABI
 
     private static function AddZeros($data, $add_left)
     { 
-        $total = self::NUM_ZEROS - strlen($data);
+        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
         $res = $data;
 
         if($total > 0) {
@@ -415,7 +416,7 @@ class ABI
 
 	private static function AddNegativeF($data, $add_left)
     { 
-        $total = self::NUM_ZEROS - strlen($data);
+        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
         $res = $data;
 
         if($total > 0) {
@@ -432,7 +433,7 @@ class ABI
     { 
 		$valueToAdd = (strtolower($data[0]) == 'f' && strlen($data) == 16) ? 'f' : '0';
 
-        $total = self::NUM_ZEROS - strlen($data);
+        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
         $res = $data;
 
         if($total > 0) {
@@ -475,7 +476,8 @@ class ABI
             } 
 
             //var_dump($output->type." ".$output->name." ".$index);
-            $varType = self::GetParameterType($output->type);
+			$output_type = is_string($output) ? $output : $output->type;
+            $varType = self::GetParameterType($output_type);
              
             //dynamic
             if(str_contains($output->type, '['))
@@ -505,7 +507,9 @@ class ABI
 				$var_name = 'result';
 				if($output->name != '')  $var_name = $output->name;
 				else if($output_count > 1) 'elem_'.$elem_index; 
-                $group->$var_name = $this->DecodeInput_Generic(self::GetParameterType($output->type), $encoded, $index);  
+
+				$output_type = is_string($output) ? $output : $output->type;
+                $group->$var_name = $this->DecodeInput_Generic(self::GetParameterType($output_type), $encoded, $index);  
             }  
 
             $elem_index++;
