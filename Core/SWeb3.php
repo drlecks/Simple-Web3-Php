@@ -82,15 +82,18 @@ class SWeb3
 
     function call(string $method, $params = null)
     {
-        if ($params != null) $params = $this->utils->forceAllNumbersHex($params);  
-
         //format api data
         $ethRequest = new Ethereum_CRPC();
         $ethRequest->id = 1;
         $ethRequest->jsonrpc = '2.0';
         $ethRequest->method = $method;
-        $ethRequest->params = $params;  
-        
+         
+		if ($params != null) {
+            $ethRequest->params = $this->utils->forceAllNumbersHex($params);
+        } else {
+            $ethRequest->params = [];
+        }
+ 
         if ($this->do_batch) {
             $this->batched_calls []= $ethRequest;
             return true;
