@@ -260,6 +260,20 @@ class SWeb3
 
         return $result;
     }
+
+
+	//general info: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_gettransactionreceipt 
+    function getTransactionReceipt(string $transaction_hash)
+    {  
+        $result = $this->call('eth_getTransactionReceipt', [$transaction_hash]); 
+ 
+        if(!isset($result->result)) {
+            throw new Exception('getTransactionReceipt error: ' . $result);   
+        }
+
+        return $result;
+    }
+	
 }
 
 
