@@ -649,4 +649,45 @@ class ABI
         
         return $data;
     }
+
+
+
+	//EVENTS
+
+	//parses event parameters
+	//event inputs are splitted between indexed topics and encoded data string
+	public function DecodeEvent($event_object, $log) : stdClass
+    {
+        $res = new stdClass();
+		$res->indexed = array();
+		$res->indexed []= $event_object->name;
+
+		$res->data = array();
+
+		//split inputs between indexed and raw data
+		$indexed_index = 1;
+		$data_inputs = array();
+ 
+		foreach ($event_object->inputs as $input)
+		{
+			if ($input->indexed)
+			{
+				$varType = self::GetParameterType($input->type);
+				$res->indexed[$input->name] = $this->DecodeInput_Generic($varType, $log->topics[$indexed_index], 0);
+
+				$indexed_index++;
+			}
+			else
+			{
+				$data_inputs []= $input;
+			}
+		}
+
+		//parse raw data
+		$encoded = substr($log->data, 2); 
+		$res->data = $this->DecodeGroup($data_inputs, $encoded, 0);
+ 
+		//Return
+		return $res;
+    }
 }

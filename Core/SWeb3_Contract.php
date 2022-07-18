@@ -19,7 +19,7 @@ use Exception;
  
 class SWeb3_Contract
 {
-    private $s_web3;
+    private $sweb3;
     private $ABI;
     private $address;
     private $bytecode;
@@ -135,6 +135,22 @@ class SWeb3_Contract
     }
 
 
+	//EVENT LOGS
+
+	//returns event ABI from event hash (encoded event name in transaction logs -> topics[0])
+	function GetEventFromLog($log_object)
+	{
+		return  $this->ABI->GetEventFromHash($log_object->topics[0]);
+	}
+
+
+	//returns decoded topics/data from event object (in transaction logs )
+	function DecodeEvent($event_object, $log)
+	{ 
+        return $this->ABI->DecodeEvent($event_object, $log);
+	}
+
+
     //returns all event logs. each with 2 extra parameters "decoded_data" and "event_anme"
     function getLogs(string $minBlock = null, string $maxBlock = null, $topics = null)
     {
@@ -143,12 +159,11 @@ class SWeb3_Contract
 
         foreach($logs as $log) 
         {
-            $event = $this->ABI->GetEventFromHash($log->topics[0]);
-            if($event != null) {
-                $log->event_name = $event->name;
-
-                $encoded = substr($log->data, 2);  
-                $log->decoded_data = $this->ABI->DecodeGroup($event->inputs, $encoded, 0);
+            $event = $this->GetEventFromLog($log);
+            if($event != null)
+			{
+                $log->event_name = $event->name; 
+				$log->decoded_data = $this->DecodeEvent($event, $log);
             }
             else  {
                 $log->event_name = 'unknown'; 
@@ -157,4 +172,6 @@ class SWeb3_Contract
  
         return $logs;
     }
+
+	
 }
