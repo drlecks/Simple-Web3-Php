@@ -253,9 +253,9 @@ class SWeb3
         if ($topics != null) $data->topics = $topics;
  
         $result = $this->call('eth_getLogs', [$data]); 
- 
+
         if(!isset($result->result) || !is_array($result->result)) {
-            throw new Exception('getLogs error: ' . $result);   
+            throw new Exception('getLogs error: ' . json_encode($result));   
         }
 
         return $result;
@@ -268,7 +268,7 @@ class SWeb3
         $result = $this->call('eth_getTransactionReceipt', [$transaction_hash]); 
  
         if(!isset($result->result)) {
-            throw new Exception('getTransactionReceipt error: ' . $result);   
+            throw new Exception('getTransactionReceipt error: ' . json_encode($result));   
         }
 
         return $result;
