@@ -94,7 +94,7 @@ class Utils
      */
     public static function toHex($value, $isPrefix=false)
     {
-        if (is_numeric($value)) {
+        if (is_numeric($value) && !is_float($value) && !is_double($value)) {
             // turn to hex number
             $bn = self::toBn($value);
             $hex = $bn->toHex(true);
@@ -106,7 +106,8 @@ class Utils
             $hex = $value->toHex(true);
             $hex = preg_replace('/^0+(?!$)/', '', $hex);
         } else {
-            throw new InvalidArgumentException('The value to toHex function is not support.');
+			$type_error = gettype($value);
+            throw new InvalidArgumentException("The value to Utils::toHex() function is not supported: value=$value type=$type_error. Only int, hex string, BigNumber or int string representation are allowed.");
         }
         
         if ($isPrefix) {

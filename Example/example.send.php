@@ -17,11 +17,12 @@ include_once("../vendor/autoload.php");
 include_once("example.config.php");
  
 use stdClass; 
+use Exception;
 use SWeb3\SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3_Contract;
 use phpseclib\Math\BigInteger as BigNumber;
-
+ 
 
 //IMPORTANT
 //Remember that this is an example showing how to execute the common features of sending signed transactions through the ethereum rpc api
