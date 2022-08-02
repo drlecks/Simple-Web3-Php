@@ -15,11 +15,10 @@ ini_set('display_startup_errors', '1');
 
 include_once("../vendor/autoload.php");
 include_once("example.config.php");
- 
-use stdClass;
-use SWeb3\SWeb3;
-use SWeb3\Utils;
+  
+use SWeb3\SWeb3; 
 use SWeb3\SWeb3_Contract;
+use phpseclib\Math\BigInteger as BigNumber;
 
 
 //IMPORTANT
@@ -49,8 +48,8 @@ $res = $sweb3->executeBatch();
 
 PrintCallResult('Gas price & nonce:', $res);
 
-$gasPrice = $sweb3->utils->hexToDec($res[0]->result);  
-$nonce = $sweb3->utils->hexToDec($res[1]->result); 
+$gasPrice = $sweb3->utils->hexToBn($res[0]->result);  
+$nonce = $sweb3->utils->hexToBn($res[1]->result); 
 
 
 //CALL
@@ -66,6 +65,7 @@ $contract->call('autoinc_tuple_a');
 
 //contract: input string[][] returns tuple[][] 
 $contract->call('Mirror_StringArray', [['text1', 'text22'], ['text333', 'text4444'], ['text55555', 'text666666']]);
+
 
 //SEND  
 //send 0.001 eth
@@ -84,9 +84,17 @@ $sweb3->send($sendParams);
 
 //execute all batched calls
 $res = $sweb3->executeBatch();
+
 PrintCallResult('Batched calls:', $res);
- 
+
+
+PrintCallResult('contract => autoinc_tuple_a', $contract->DecodeData('autoinc_tuple_a', $res[1]->result));
+PrintCallResult('contract => Mirror_StringArray', $contract->DecodeData('Mirror_StringArray', $res[2]->result));
+
 exit(0);
+
+
+
     
  
  
@@ -96,10 +104,45 @@ function PrintCallResult($callName, $result)
 
     if(is_array($result))
     {
-        foreach($result as $key => $part) echo "Part [" . $key . "]-> ". json_encode($part) . "<br/>";
+        foreach($result as $key => $part) 
+		{
+			echo "Part [" . $key . "]-> ". PrintObject($part) . "<br/>";
+		}
     }
     else {
-        echo "Result -> ". json_encode($result) . "<br/>";
+        echo "Result -> ". PrintObject($result) . "<br/>";
     }
     
+}
+
+
+
+
+function PrintObject($x)
+{ 
+	if ($x instanceof BigNumber)
+	{
+		return $x . '';
+	}
+	
+	if (is_object($x)) {
+		$x = (array)($x); 
+	}
+
+	if (is_array($x))
+	{
+		$text = "[";
+		$first = true;
+		foreach($x as $key => $value)
+		{
+			if ($first)  	$first = false;
+			else 			$text .= ", ";
+
+			$text .= $key . " : " . PrintObject($value);
+		}
+
+		return $text . "]"; 
+	}
+	 
+	return $x . '';
 }

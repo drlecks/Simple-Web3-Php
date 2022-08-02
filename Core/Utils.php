@@ -18,8 +18,10 @@
 
 namespace SWeb3;
 
-use RuntimeException;
+
+use stdClass;
 use InvalidArgumentException;  
+use kornrunner\Keccak;
 use phpseclib\Math\BigInteger as BigNumber;
 
 class Utils
@@ -70,16 +72,16 @@ class Utils
 
 
     /**
-     * hexToDec
+     * hexToBn
      * decoding hex number into decimal 
      * 
      * @param string  $value 
      * @return  int
      */
-    public static function hexToDec($value)
+    public static function hexToBn($value)
     {
         $value = self::stripZero($value);
-        return new BigNumber($value, 16);//hexdec($value);
+        return (new BigNumber($value, 16));
     }
 
     /**
@@ -92,7 +94,7 @@ class Utils
      */
     public static function toHex($value, $isPrefix=false)
     {
-        if (is_numeric($value)) {
+        if (is_numeric($value) && !is_float($value) && !is_double($value)) {
             // turn to hex number
             $bn = self::toBn($value);
             $hex = $bn->toHex(true);
@@ -104,7 +106,8 @@ class Utils
             $hex = $value->toHex(true);
             $hex = preg_replace('/^0+(?!$)/', '', $hex);
         } else {
-            throw new InvalidArgumentException('The value to toHex function is not support.');
+			$type_error = gettype($value);
+            throw new InvalidArgumentException("The value to Utils::toHex() function is not supported: value=$value type=$type_error. Only int, hex string, BigNumber or int string representation are allowed.");
         }
         
         if ($isPrefix) {
@@ -140,7 +143,7 @@ class Utils
     public static function isZeroPrefixed($value)
     {
         if (!is_string($value)) {
-            throw new InvalidArgumentException('The value to isZeroPrefixed function must be string.');
+            //throw new InvalidArgumentException('The value to isZeroPrefixed function must be string.');
         }
         return (strpos($value, '0x') === 0);
     }
@@ -552,9 +555,11 @@ class Utils
     {
         if ($number instanceof BigNumber){
             $bn = $number;
-        } elseif (is_int($number)) {
+        } 
+		elseif (is_int($number)) {
             $bn = new BigNumber($number);
-        } elseif (is_numeric($number)) {
+        } 
+		elseif (is_numeric($number)) {
             $number = (string) $number;
 
             if (self::isNegative($number)) {
@@ -583,7 +588,8 @@ class Utils
             if (isset($negative1)) {
                 $bn = $bn->multiply($negative1);
             }
-        } elseif (is_string($number)) {
+        } 
+		elseif (is_string($number)) {
             $number = mb_strtolower($number);
 
             if (self::isNegative($number)) {
@@ -602,9 +608,16 @@ class Utils
             if (isset($negative1)) {
                 $bn = $bn->multiply($negative1);
             }
-        } else {
+        } 
+		else {
             throw new InvalidArgumentException('toBn number must be BigNumber, string or int.');
         }
         return $bn;
     }
+
+
+	public static function GetRandomHex(int $length)
+	{
+		return bin2hex(openssl_random_pseudo_bytes($length / 2));   
+	}
 }

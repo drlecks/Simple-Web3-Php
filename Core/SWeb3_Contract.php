@@ -15,18 +15,17 @@ namespace SWeb3;
 use SWeb3\Utils;
 use SWeb3\SWeb3;
 use stdClass;
-use Exception;
-use phpseclib\Math\BigInteger as BigNumber;
+use Exception; 
  
 class SWeb3_Contract
 {
-    private $s_web3;
+    private $sweb3;
     private $ABI;
     private $address;
     private $bytecode;
   
 
-    function __construct($sweb3, $contractAddress, $contractABI)
+    function __construct(SWeb3 $sweb3, string $contractAddress, $contractABI)
     {
         $this->sweb3 = $sweb3;
         $this->address = $contractAddress;
@@ -42,7 +41,7 @@ class SWeb3_Contract
     }
   
 
-    function call($function_name, $callData = null, $extraParams = null)
+    function call(string $function_name, $callData = null, $extraParams = null)
     {  
         if (!$this->ABI->isCallFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a call function in this contract');  
@@ -58,13 +57,13 @@ class SWeb3_Contract
         $result = $this->sweb3->call('eth_call', $data);
          
         if(isset($result->result))
-            return $this->ABI->DecodeData($function_name, $result->result);
+            return $this->DecodeData($function_name, $result->result);
         else 
             return $result;
     }
 
 
-    function send($function_name, $sendData, $extraParams = null)
+    function send(string $function_name, $sendData, $extraParams = null)
     { 
         if (!$this->ABI->isSendFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a send function (changing state transaction) in this contract');  
@@ -78,9 +77,16 @@ class SWeb3_Contract
 
         if (!isset($extraParams['gasLimit'])) $extraParams['gasLimit'] =  $this->estimateGas($extraParams);
    
+		//exit;
         $result = $this->sweb3->send($extraParams);
         return $result;
     }
+
+
+	function DecodeData(string $function_name, $data)
+	{
+		return $this->ABI->DecodeData($function_name, $data);
+	}
 
 
     function estimateGas($extraParams)
@@ -91,13 +97,13 @@ class SWeb3_Contract
             throw new Exception('ERROR: estimateGas error: ' . $gasEstimateResult->error->message); 
         }
 
-        $gasEstimate = $this->sweb3->utils->hexToDec($gasEstimateResult->result);
+        $gasEstimate = $this->sweb3->utils->hexToBn($gasEstimateResult->result);
 
         return $gasEstimate;
     }
 
  
-    function deployContract($inputs = [], $extra_params = [])
+    function deployContract(array $inputs = [], array $extra_params = [])
     {
         if(!isset($this->bytecode)) {
             throw new Exception('ERROR: you need to initialize bytecode to deploy the contract'); 
@@ -119,7 +125,7 @@ class SWeb3_Contract
             if(!isset($gasEstimateResult->result))
                 throw new Exception('estimation error: ' . json_encode($gasEstimateResult));   
 
-            $extra_params['gasLimit'] = $this->sweb3->utils->hexToDec($gasEstimateResult->result); 
+            $extra_params['gasLimit'] = $this->sweb3->utils->hexToBn($gasEstimateResult->result); 
         }
 
         //get gas price
@@ -129,20 +135,35 @@ class SWeb3_Contract
     }
 
 
+	//EVENT LOGS
+
+	//returns event ABI from event hash (encoded event name in transaction logs -> topics[0])
+	function GetEventFromLog($log_object)
+	{
+		return  $this->ABI->GetEventFromHash($log_object->topics[0]);
+	}
+
+
+	//returns decoded topics/data from event object (in transaction logs )
+	function DecodeEvent($event_object, $log)
+	{ 
+        return $this->ABI->DecodeEvent($event_object, $log);
+	}
+
+
     //returns all event logs. each with 2 extra parameters "decoded_data" and "event_anme"
-    function getLogs($minBlock = null, $maxBlock = null, $topics = null)
+    function getLogs(string $minBlock = null, string $maxBlock = null, $topics = null)
     {
         $result = $this->sweb3->getLogs($this->address, $minBlock, $maxBlock, $topics);
         $logs = $result->result;
 
         foreach($logs as $log) 
         {
-            $event = $this->ABI->GetEventFromHash($log->topics[0]);
-            if($event != null) {
-                $log->event_name = $event->name;
-
-                $encoded = substr($log->data, 2);  
-                $log->decoded_data = $this->ABI->DecodeGroup($event->inputs, $encoded, 0);
+            $event = $this->GetEventFromLog($log);
+            if($event != null)
+			{
+                $log->event_name = $event->name; 
+				$log->decoded_data = $this->DecodeEvent($event, $log);
             }
             else  {
                 $log->event_name = 'unknown'; 
@@ -151,4 +172,6 @@ class SWeb3_Contract
  
         return $logs;
     }
+
+	
 }

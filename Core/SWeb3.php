@@ -30,7 +30,7 @@ class PersonalData
     public $address;
     public $privateKey; 
 
-    function __construct($sweb3, $address, $privateKey)
+    function __construct(SWeb3 $sweb3, string $address, string $privateKey)
     {
         $this->sweb3 = $sweb3;
         $this->address = $address;
@@ -48,7 +48,7 @@ class SWeb3
 {  
     private $provider;
     private $extra_curl_params;
-    private $extra_headers;
+	private $extra_headers;
 
     public $utils;
 
@@ -60,11 +60,11 @@ class SWeb3
     private $batched_calls;
 
 
-    function __construct($url_provider, $extra_curl_params = null, $extra_headers = null)
+    function __construct(string $url_provider, array $extra_curl_params = null, array $extra_headers = null)
     {
         $this->provider = $url_provider;
-        $this->extra_curl_params = $extra_curl_params;
-        $this->extra_headers = $extra_headers;
+        $this->extra_curl_params = $extra_curl_params; 
+		$this->extra_headers = $extra_headers; 
 
         $this->utils = new Utils(); 
         $this->gasPrice = null; 
@@ -74,25 +74,26 @@ class SWeb3
     }
 
 
-    function setPersonalData($address, $privKey)
+    function setPersonalData(string $address, string $privKey)
     {
         $this->personal = new PersonalData($this, $address, $privKey); 
     }
 
 
-    function call($method, $params = null)
+    function call(string $method, $params = null)
     {
         //format api data
         $ethRequest = new Ethereum_CRPC();
         $ethRequest->id = 1;
         $ethRequest->jsonrpc = '2.0';
         $ethRequest->method = $method;
-        if ($params != null) {
+         
+		if ($params != null) {
             $ethRequest->params = $this->utils->forceAllNumbersHex($params);
         } else {
             $ethRequest->params = [];
         }
-
+ 
         if ($this->do_batch) {
             $this->batched_calls []= $ethRequest;
             return true;
@@ -136,13 +137,14 @@ class SWeb3
         }
         else {
             $sendData = json_encode($ethRequest);  
+			//var_dump( $sendData);
             return $this->makeCurl($sendData);
         } 
     } 
 
 
 
-    private function makeCurl($sendData)
+    private function makeCurl(string $sendData)
     {
         //prepare curl
         $tuCurl = curl_init();
@@ -155,14 +157,25 @@ class SWeb3
             }
         }
 
+
+		//curl settings
+
+		//curl port
+        //curl_setopt($tuCurl, CURLOPT_PORT , 443);
+
+		//post request
         curl_setopt($tuCurl, CURLOPT_POST, 1);
 
-        $headers = array("Content-Type: application/json", "Content-length: ".strlen($sendData));
+		//headers
+		$headers = array("Content-Type: application/json", "Content-length: ".strlen($sendData));
         if($this->extra_headers) {
             $headers = array_merge($headers, $this->extra_headers);
         }
         curl_setopt($tuCurl, CURLOPT_HTTPHEADER, $headers);
+
+		//post data
         curl_setopt($tuCurl, CURLOPT_POSTFIELDS, $sendData);
+
 
         //execute call
         $tuData = curl_exec($tuCurl); 
@@ -177,7 +190,7 @@ class SWeb3
     }
 
 
-    function batch($new_batch)
+    function batch(bool $new_batch)
     {
         $this->do_batch = $new_batch; 
     }
@@ -199,7 +212,7 @@ class SWeb3
     }
 
 
-    function getNonce($address)
+    function getNonce(string $address)
     {
         $transactionCount = $this->call('eth_getTransactionCount', [$address, 'pending']);   
 
@@ -207,12 +220,12 @@ class SWeb3
             throw new Exception('getNonce error. from address: ' . $address);   
         }
 
-        return $this->utils->hexToDec($transactionCount->result);
+        return $this->utils->hexToBn($transactionCount->result);
     }
  
 
 
-    function getGasPrice($force_refresh = false)
+    function getGasPrice(bool $force_refresh = false)
     {
         if ($this->gasPrice == null || $force_refresh) {
             $gasPriceResult = $this->call('eth_gasPrice'); 
@@ -221,7 +234,7 @@ class SWeb3
                 throw new Exception('getGasPrice error. ');   
             }
 
-            $this->gasPrice = $this->utils->hexToDec($gasPriceResult->result); 
+            $this->gasPrice = $this->utils->hexToBn($gasPriceResult->result); 
         }
              
         return $this->gasPrice;
@@ -230,7 +243,7 @@ class SWeb3
     //general info: https://docs.alchemy.com/alchemy/guides/eth_getlogs
     //default blocks: from-> 0x0 to-> latest
     //TOPICS: https://eth.wiki/json-rpc/API#a-note-on-specifying-topic-filters 
-    function getLogs($related_address, $minBlock = null, $maxBlock = null, $topics = null)
+    function getLogs(string $related_address, string $minBlock = null, string $maxBlock = null, $topics = null)
     { 
         $data = new stdClass();
         $data->address = $related_address;
@@ -240,13 +253,27 @@ class SWeb3
         if ($topics != null) $data->topics = $topics;
  
         $result = $this->call('eth_getLogs', [$data]); 
- 
+
         if(!isset($result->result) || !is_array($result->result)) {
-            throw new Exception('getLogs error: ' . $result);   
+            throw new Exception('getLogs error: ' . json_encode($result));   
         }
 
         return $result;
     }
+
+
+	//general info: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_gettransactionreceipt 
+    function getTransactionReceipt(string $transaction_hash)
+    {  
+        $result = $this->call('eth_getTransactionReceipt', [$transaction_hash]); 
+ 
+        if(!isset($result->result)) {
+            throw new Exception('getTransactionReceipt error: ' . json_encode($result));   
+        }
+
+        return $result;
+    }
+	
 }
 
 
