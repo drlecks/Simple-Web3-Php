@@ -25,6 +25,7 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 
 # Install
 
+### Latest stable release
 ```
 composer require drlecks/simple-web3-php "^0.9.0"
 ```
@@ -33,6 +34,18 @@ Or you can add this line in composer.json
 
 ```
 "drlecks/simple-web3-php": "^0.9.0"
+```
+
+
+### Development (main branch)
+```
+composer require drlecks/simple-web3-php dev-master
+```
+
+Or you can add this line in composer.json
+
+```
+"drlecks/simple-web3-php": "dev-master"
 ```
 
 

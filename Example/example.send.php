@@ -58,12 +58,8 @@ $contract = new SWeb3_contract($sweb3, SWP_Contract_Address, SWP_Contract_ABI);
 //Contract_AddTupleA();
 //Contract_AddTupleA_Params();
 //AddTuple_B();
-
-
-exit(0);
-
-
-
+ 
+   
 function SendETH()
 {
     global $sweb3;
