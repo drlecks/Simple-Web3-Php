@@ -4,3 +4,4 @@ composer.phar
 /.idea/
 composer.lock
 *.private.php
+/Errors/
