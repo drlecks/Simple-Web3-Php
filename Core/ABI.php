@@ -493,7 +493,9 @@ class ABI
             else if ($varType == VariableType::Tuple) { 
                 $var_name = $output->name != '' ? $output->name : 'tuple_'.$tuple_count;
                 $dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $group->$var_name = $this->DecodeGroup($output->components, $encoded, $dynamic_data_start);
+                
+                //Having issues with the $dynamic_data_start as index for Tuple varible type, changed to 0 worked fine
+                $group->$var_name = $this->DecodeGroup($output->components, $encoded, 0);
                 $tuple_count++;
             }
             else if ($varType == VariableType::String) { 
