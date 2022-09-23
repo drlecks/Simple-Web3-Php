@@ -415,6 +415,7 @@ class Utils
         return $bn->multiply($bnt);
     }
 
+
     /**
      * toEther
      * Change number from unit to ether.
@@ -436,6 +437,7 @@ class Utils
 
         return $wei->divide($bnt);
     }
+
 
     /**
      * fromWei
@@ -462,6 +464,90 @@ class Utils
 
         return $bn->divide($bnt);
     }
+
+
+	 /**
+     * toWeiString
+     * Change number from unit to wei. and show a string representation
+     * For example:
+     * $wei = Utils::toWeiString('1', 'kwei');  // 1000
+     * 
+     * @param BigNumber|string $number
+     * @param string $unit
+     * @return string
+     */
+    public static function toWeiString($number, $unit)
+    {
+		$conv = self::toWei($number, $unit);
+		return $conv->toString();
+	}
+
+
+	/**
+     * toEtherString
+     * Change number from unit to ether. and show a string representation
+     * For example:
+     * $ether = Utils::toEtherString('1', 'kether');  // 1000
+     * 
+     * @param BigNumber|string|int $number
+     * @param string $unit
+     * @return string
+     */
+    public static function toEtherString($number, $unit)
+    {
+        $conversion = self::toEther($number, $unit); 
+		$left = $conversion[0]->toString();
+		$right = $conversion[1]->toString();
+
+		if ($right != "0")
+		{
+			$bnt_unit = new BigNumber(self::UNITS[$unit]);
+			$bnt_ether = new BigNumber(self::UNITS['ether']); 
+
+			$right_lead_zeros = strlen($bnt_ether->toString()) - strlen($bnt_unit->toString());    
+			$right = str_pad($right, $right_lead_zeros, '0', STR_PAD_LEFT);
+
+			return $left . '.' . $right; 
+		}
+		else
+		{
+			return $left;
+		} 
+    }
+
+
+	/**
+     * fromWeiToString
+     * Change number from wei to unit. and show a string representation
+     * For example:
+     * $kwei = Utils::fromWei('1001', 'kwei'); // 1.001 
+     * 
+     * @param BigNumber|string|int $number
+     * @param string $unit
+     * @return \phpseclib\Math\BigInteger
+     */
+	public static function fromWeiToString($number, $unit)
+    {
+		$conversion = self::fromWei($number, $unit); 
+		$left = $conversion[0]->toString();
+		$right = $conversion[1]->toString();
+
+		if ($right != "0")
+		{
+			$bnt_wei = new BigNumber(self::UNITS['wei']);
+			$bnt_unit = new BigNumber(self::UNITS[$unit]);
+
+			$right_lead_zeros = strlen($bnt_unit->toString()) - strlen($bnt_wei->toString());  
+			$right = str_pad($right, $right_lead_zeros, '0', STR_PAD_LEFT);
+
+			return $left . '.' . $right; 
+		}
+		else
+		{
+			return $left;
+		} 
+	}
+
 
     /**
      * jsonMethodToString

@@ -89,6 +89,14 @@ Format 1 ether to wei (unit required for ether values in transactions):
 $sweb3->utils->toWei('0.001', 'ether');
 ``` 
 
+Get average-human readable string representation from a value conversion:
+```php  
+$s_val = Utils::fromWeiToString('1001', 'kwei'); // "1.001"
+
+$s_val = Utils::toWeiString('1.001', 'kwei'); // "1001"
+```  
+
+
 ### general ethereum block information call:
 ```php 
 $res = $sweb3->call('eth_blockNumber', []);
@@ -130,7 +138,7 @@ $result = $sweb3->send($sendParams);
 $sweb3->batch(true);
 
 $sweb3->call('eth_blockNumber', []); 
-$sweb3->call('eth_getBalance', [$sweb3->personal->address]);
+$sweb3->call('eth_getBalance', [$sweb3->personal->address, 'latest']);
 
 //execute all batched calls in one request
 $res = $sweb3->executeBatch();
