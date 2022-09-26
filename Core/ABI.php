@@ -168,7 +168,6 @@ class ABI
     public function EncodeData($function_name, $data)   
     { 
         $function = $this->GetFunction($function_name);  
-
         $data = $this->forceWrapperArray($function, $data);
 
         $hashData = "0x";
@@ -335,8 +334,7 @@ class ABI
  
                 $input->hash =  self::EncodeInput_Array($clean_type, $inputData);
                 $res = self::EncodeInput_UInt($currentDynamicIndex); 
-                return $res;
-                
+                return $res; 
             }
             else if  ($varType == VariableType::Tuple)
             {
@@ -346,7 +344,7 @@ class ABI
             }
             else if ($varType == VariableType::String) {
                 $input->hash = self::EncodeInput_String($inputData);
-                $res = self::EncodeInput_UInt($currentDynamicIndex); 
+                $res = self::EncodeInput_UInt($currentDynamicIndex);  
                 return $res;
             }
             //static
@@ -361,8 +359,7 @@ class ABI
             }
             else if ($varType == VariableType::Address) { 
                 return self::EncodeInput_Address($inputData);
-            } 
-           
+            }  
         }
         else if($round == 2)
         {

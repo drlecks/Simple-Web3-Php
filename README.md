@@ -97,17 +97,17 @@ $s_val = Utils::toWeiString('1.001', 'kwei'); // "1001"
 ```  
 
 
-### general ethereum block information call:
+### General ethereum block information call:
 ```php 
 $res = $sweb3->call('eth_blockNumber', []);
 ```
  
-### refresh gas price 
+### Refresh gas price 
 ```php 
 $gasPrice = $sweb3->getGasPrice();
 ``` 
 
-### estimate  gas price (from send params)
+### Estimate  gas price (from send params)
 ```php 
 $sweb3->chainId = '0x3';//ropsten 
 $sendParams = [ 
@@ -119,7 +119,7 @@ $sendParams = [
 $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```
  
-### send 0.001 ether to address
+### Send 0.001 ether to address
 ```php
 //remember to set personal data first with a valid pair of address & private key
 $sendParams = [ 
@@ -132,7 +132,7 @@ $sendParams = [
 $result = $sweb3->send($sendParams); 
 ```
  
-### batch calls & transactions
+### Batch calls & transactions
 ```php 
 //enable batching
 $sweb3->batch(true);
@@ -227,6 +227,7 @@ In the folder Examples/ there are some extended examples with call & send exampl
 - example.batch.php
 - example.account.php
 - example.contract_creation.php
+- example.erc20.php
 
  ### Example configuration
 

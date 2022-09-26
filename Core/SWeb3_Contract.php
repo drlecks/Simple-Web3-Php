@@ -72,6 +72,7 @@ class SWeb3_Contract
         $hashData = $this->ABI->EncodeData($function_name, $sendData); 
        
         if ($extraParams == null) $extraParams = [];
+		$extraParams['from'] =  $this->sweb3->personal->address;
         $extraParams['to'] =  $this->address;
         $extraParams['data'] =  $hashData; 
 
@@ -90,11 +91,11 @@ class SWeb3_Contract
 
 
     function estimateGas($extraParams)
-    {   
+    {    
         $gasEstimateResult = $this->sweb3->call('eth_estimateGas', [$extraParams]); 
     
         if(!isset($gasEstimateResult->result)) { 
-            throw new Exception('ERROR: estimateGas error: ' . $gasEstimateResult->error->message); 
+            throw new Exception('ERROR: estimateGas error: ' . $gasEstimateResult->error->message . ' (' . $gasEstimateResult->error->code . ')'); 
         }
 
         $gasEstimate = $this->sweb3->utils->hexToBn($gasEstimateResult->result);
