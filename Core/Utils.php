@@ -360,26 +360,57 @@ class Utils
      * @param string $unit
      * @return \phpseclib\Math\BigInteger
      */
-    public static function toWei($number, $unit)
+    public static function toWei($number, string $unit)
+    { 
+        if (!isset(self::UNITS[$unit])) {
+            throw new InvalidArgumentException('toWei doesn\'t support ' . $unit . ' unit.');
+        } 
+		
+		return self::toWei_Internal($number, self::UNITS[$unit]);
+    }
+
+
+	/**
+     * toWeiFromDecimals
+     * Change number from unit that has decimals to wei.
+     * For example:
+     * $wei = Utils::toWeiFromDecimals('0.01', 8);  //1000000
+     * $wei->toString(); // 1000
+     * 
+     * @param BigNumber|string $number
+     * @param string $unit
+     * @return \phpseclib\Math\BigInteger
+     */
+    public static function toWeiFromDecimals($number, int $numberOfDecimals)
+    {  
+		$exponent = str_pad('1', $numberOfDecimals + 1, '0', STR_PAD_RIGHT);
+		return self::toWei_Internal($number, $exponent);
+    }
+
+
+	 /**
+     * toWei_Internal
+     * Internal private fucntion to convert a number in "unti" to string. 
+	 * The unit string is 1000...000 having # decimal zero positions 
+     * 
+     * @param BigNumber|string $number
+     * @param string $unit_value
+     * @return \phpseclib\Math\BigInteger
+     */
+	private static function toWei_Internal($number, string $unit_value)
     {
         if (!is_string($number) && !($number instanceof BigNumber)) {
             throw new InvalidArgumentException('toWei number must be string or bignumber.');
         }
         $bn = self::toBn($number);
-
-        if (!is_string($unit)) {
-            throw new InvalidArgumentException('toWei unit must be string.');
-        }
-        if (!isset(self::UNITS[$unit])) {
-            throw new InvalidArgumentException('toWei doesn\'t support ' . $unit . ' unit.');
-        }
-        $bnt = new BigNumber(self::UNITS[$unit]);
+  
+        $bnt = new BigNumber($unit_value);
 
         if (is_array($bn)) {
             // fraction number
             list($whole, $fraction, $fractionLength, $negative1) = $bn;
 
-            if ($fractionLength > strlen(self::UNITS[$unit])) {
+            if ($fractionLength > strlen($unit_value)) {
                 throw new InvalidArgumentException('toWei fraction part is out of limit.');
             }
             $whole = $whole->multiply($bnt);
@@ -466,6 +497,7 @@ class Utils
     }
 
 
+	 
 	 /**
      * toWeiString
      * Change number from unit to wei. and show a string representation
@@ -476,9 +508,25 @@ class Utils
      * @param string $unit
      * @return string
      */
-    public static function toWeiString($number, $unit)
+    public static function toWeiString($number, $unit) : string
     {
 		$conv = self::toWei($number, $unit);
+		return $conv->toString();
+	}
+
+	/**
+     * toWeiStringfromDecimals
+     * Change number from decimals to wei. and show a string representation
+     * For example:
+     * $wei = Utils::toWeiStringfromDecimals('1', 'kwei');  // 1000
+     * 
+     * @param BigNumber|string $number
+     * @param int $numberOfDecimals
+     * @return string
+     */
+    public static function toWeiStringfromDecimals($number, int $numberOfDecimals) : string
+    {
+		$conv = self::toWeiFromDecimals($number, $numberOfDecimals);
 		return $conv->toString();
 	}
 
@@ -493,26 +541,10 @@ class Utils
      * @param string $unit
      * @return string
      */
-    public static function toEtherString($number, $unit)
+    public static function toEtherString($number, $unit) : string
     {
-        $conversion = self::toEther($number, $unit); 
-		$left = $conversion[0]->toString();
-		$right = $conversion[1]->toString();
-
-		if ($right != "0")
-		{
-			$bnt_unit = new BigNumber(self::UNITS[$unit]);
-			$bnt_ether = new BigNumber(self::UNITS['ether']); 
-
-			$right_lead_zeros = strlen($bnt_ether->toString()) - strlen($bnt_unit->toString());    
-			$right = str_pad($right, $right_lead_zeros, '0', STR_PAD_LEFT);
-
-			return $left . '.' . $right; 
-		}
-		else
-		{
-			return $left;
-		} 
+        $conversion = self::toEther($number, $unit);   
+		return self::transformDivisionToString($conversion, self::UNITS[$unit], self::UNITS['ether']);
     }
 
 
@@ -526,16 +558,57 @@ class Utils
      * @param string $unit
      * @return \phpseclib\Math\BigInteger
      */
-	public static function fromWeiToString($number, $unit)
+	public static function fromWeiToString($number, $unit) : string
     {
-		$conversion = self::fromWei($number, $unit); 
-		$left = $conversion[0]->toString();
-		$right = $conversion[1]->toString();
+		$conversion = self::fromWei($number, $unit);   
+		return self::transformDivisionToString($conversion, self::UNITS['wei'], self::UNITS[$unit]);
+	}
+ 
+
+	/**
+     * fromWeiToDecimalsString
+     * Change number from wei to number of decimals.
+     * For example:
+     * $stringNumber = Utils::fromWeiToDecimalsString('1000000', 8); //0.01 
+     * 
+     * @param BigNumber|string|int $number
+     * @param int $numberOfDecimals
+     * @return string
+     */
+    public static function fromWeiToDecimalsString($number, int $numberOfDecimals) : string
+    {
+        $bn = self::toBn($number);
+
+        $exponent = str_pad('1', $numberOfDecimals + 1, '0', STR_PAD_RIGHT);
+
+        $bnt = new BigNumber($exponent);
+
+		$conversion = $bn->divide($bnt);
+
+        return self::transformDivisionToString($conversion, self::UNITS['wei'], $exponent);
+    }
+
+
+	/**
+     * transformDivisionToString
+     * Internal private fucntion to convert a [quotient, remainder] BigNumber division result, 
+	 * to a human readable unit.decimals (12.3920012000)
+	 * The unit string is 1000...000 having # decimal zero positions 
+     * 
+     * @param (\phpseclib\Math\BigInteg, \phpseclib\Math\BigInteg) $divisionArray
+     * @param string $unitZerosOrigin string representing the origin unit's number of zeros 
+	 * @param string $unitZerosOrigin string representing the origin unit's number of zeros 
+     * @return string
+     */
+	private static function transformDivisionToString($divisionArray, $unitZerosOrigin, $unitZerosDestiny) : string
+	{
+		$left = $divisionArray[0]->toString();
+		$right = $divisionArray[1]->toString();
 
 		if ($right != "0")
 		{
-			$bnt_wei = new BigNumber(self::UNITS['wei']);
-			$bnt_unit = new BigNumber(self::UNITS[$unit]);
+			$bnt_wei = new BigNumber($unitZerosOrigin);
+			$bnt_unit = new BigNumber($unitZerosDestiny);
 
 			$right_lead_zeros = strlen($bnt_unit->toString()) - strlen($bnt_wei->toString());  
 			$right = str_pad($right, $right_lead_zeros, '0', STR_PAD_LEFT);
@@ -548,14 +621,13 @@ class Utils
 		} 
 	}
 
-
     /**
      * jsonMethodToString
      * 
      * @param stdClass|array $json
      * @return string
      */
-    public static function jsonMethodToString($json)
+    public static function jsonMethodToString($json) : string
     {
         if ($json instanceof stdClass) {
             // one way to change whole json stdClass to array type

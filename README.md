@@ -20,6 +20,7 @@ A php interface for interacting with the Ethereum blockchain and ecosystem.
 - Contract creation
 - Contract interaction (call/send)
 - Contract Events/logs with filters
+- Support for ERC20 contracts with non-nominative decimal values
 - Examples provided interacting with simple types, strings, tuples, arrays, arrays of tuples with arrays, multi-dimension arrays... 
 
 
