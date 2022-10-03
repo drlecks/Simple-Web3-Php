@@ -515,16 +515,16 @@ class Utils
 	}
 
 	/**
-     * toWeiStringfromDecimals
+     * toWeiStringFromDecimals
      * Change number from decimals to wei. and show a string representation
      * For example:
-     * $wei = Utils::toWeiStringfromDecimals('1', 'kwei');  // 1000
+     * $wei = Utils::toWeiStringFromDecimals('1', 'kwei');  // 1000
      * 
      * @param BigNumber|string $number
      * @param int $numberOfDecimals
      * @return string
      */
-    public static function toWeiStringfromDecimals($number, int $numberOfDecimals) : string
+    public static function toWeiStringFromDecimals($number, int $numberOfDecimals) : string
     {
 		$conv = self::toWeiFromDecimals($number, $numberOfDecimals);
 		return $conv->toString();
