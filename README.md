@@ -1,5 +1,6 @@
 # simple-web3-php
- 
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/drlecks/simple-web3-php.svg?style=flat-square)](https://packagist.org/packages/drlecks/simple-web3-php)
 [![Join the chat at https://gitter.im/drlecks/Simple-Web3-Php](https://img.shields.io/badge/gitter-join%20chat-brightgreen.svg)](https://gitter.im/Simple-Web3-Php/community)
 [![Licensed under the MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/drlecks/Simple-Web3-Php/blob/master/LICENSE)
 
