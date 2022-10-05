@@ -626,6 +626,7 @@ class ABI
             return $this->DecodeInput_Address($encoded, $start);
         }
     }
+
  
 	private function DecodeInput_UInt_Internal($encoded, $start)
     {
@@ -634,22 +635,23 @@ class ABI
         return hexdec($partial);
     }
 
+
     private function DecodeInput_UInt($encoded, $start)
     {
         $partial = substr($encoded, $start, 64);   
         $partial = $this->RemoveZeros($partial, true);  
-        //return hexdec($partial);
-		return new BigNumber($partial, 16);
+   
+		$partial_big = new BigNumber($partial, 16);
+
+		return $partial_big;
     }
+
 
 	private function DecodeInput_Int($encoded, $start)
     {
-        $partial = substr($encoded, $start, 64);   
-		$first_byte = hexdec($partial[0]);
-
-		$partial = $this->RemoveZeros($partial, true); 
+        $partial = substr($encoded, $start, 64);     
 		$partial_big = new BigNumber($partial, -16);
- 
+
         return $partial_big;
     }
 
@@ -661,6 +663,7 @@ class ABI
         return $partial == '1';
     }
 
+	
     private function DecodeInput_Address($encoded, $start)
     {
         $partial = $this->RemoveZeros(substr($encoded, $start, 64), true);  
