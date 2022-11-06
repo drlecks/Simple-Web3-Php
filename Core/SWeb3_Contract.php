@@ -77,8 +77,8 @@ class SWeb3_Contract
         $extraParams['data'] =  $hashData; 
 
         if (!isset($extraParams['gasLimit'])) $extraParams['gasLimit'] =  $this->estimateGas($extraParams);
-   
-		//exit;
+     
+
         $result = $this->sweb3->send($extraParams);
         return $result;
     }

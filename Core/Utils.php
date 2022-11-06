@@ -464,7 +464,7 @@ class Utils
         //     throw new InvalidArgumentException('Please use another unit.');
         // }
         $wei = self::toWei($number, $unit);
-        $bnt = new BigNumber(self::UNITS['ether']);
+        $bnt = new BigNumber(self::UNITS['ether']); 
 
         return $wei->divide($bnt);
     }
@@ -604,15 +604,17 @@ class Utils
 	{
 		$left = $divisionArray[0]->toString();
 		$right = $divisionArray[1]->toString();
-
+ 
 		if ($right != "0")
 		{
 			$bnt_wei = new BigNumber($unitZerosOrigin);
 			$bnt_unit = new BigNumber($unitZerosDestiny);
-
-			$right_lead_zeros = strlen($bnt_unit->toString()) - strlen($bnt_wei->toString());  
-			$right = str_pad($right, $right_lead_zeros, '0', STR_PAD_LEFT);
-
+ 
+			$right_lead_zeros = strlen($bnt_unit->toString()) - strlen($bnt_wei->toString()) - strlen($right);  
+			
+			for ($i = 0; $i < $right_lead_zeros; $i++) $right = '0' . $right;
+			$right = rtrim($right, "0");
+			
 			return $left . '.' . $right; 
 		}
 		else

@@ -15,6 +15,7 @@ use stdClass;
 use Exception;
 use SWeb3\Utils;
 use kornrunner\Ethereum\Transaction;
+use phpseclib\Math\BigInteger as BigNumber;
 
 class Ethereum_CRPC
 {
@@ -107,16 +108,18 @@ class SWeb3
 
     function send($params)
     { 
+		if (!isset($params['gasPrice'])) $params['gasPrice'] = $this->getGasPrice();
         if ($params != null) $params = $this->utils->forceAllNumbersHex($params); 
         
         //prepare data
         $nonce = (isset($params['nonce'])) ? $params['nonce'] : '';
-        $gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice'] : $this->getGasPrice();
+        $gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice'] : '';
         $gasLimit = (isset($params['gasLimit'])) ? $params['gasLimit'] : '';
         $to = (isset($params['to'])) ? $params['to'] : '';
         $value = (isset($params['value'])) ? $params['value'] : '';
         $data = (isset($params['data'])) ? $params['data'] : '';
         $chainId = (isset($this->chainId)) ? $this->chainId : '0x0';
+
 
         //sign transaction 
         $transaction = new Transaction ($nonce, $gasPrice, $gasLimit, $to, $value, $data);
@@ -225,12 +228,13 @@ class SWeb3
  
 
 
-    function getGasPrice(bool $force_refresh = false)
+    function getGasPrice(bool $force_refresh = false) : BigNumber
     {
         if ($this->gasPrice == null || $force_refresh) {
             $gasPriceResult = $this->call('eth_gasPrice'); 
 
             if(!isset($gasPriceResult->result)) {
+				var_dump($gasPriceResult);
                 throw new Exception('getGasPrice error. ');   
             }
 
@@ -239,6 +243,7 @@ class SWeb3
              
         return $this->gasPrice;
     }
+
 
     //general info: https://docs.alchemy.com/alchemy/guides/eth_getlogs
     //default blocks: from-> 0x0 to-> latest
@@ -254,7 +259,7 @@ class SWeb3
  
         $result = $this->call('eth_getLogs', [$data]); 
 
-        if(!isset($result->result) || !is_array($result->result)) {
+        if (!isset($result->result) || !is_array($result->result)) {
             throw new Exception('getLogs error: ' . json_encode($result));   
         }
 
