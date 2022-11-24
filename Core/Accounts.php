@@ -128,9 +128,9 @@ class Accounts
   
 
 	public static function hashMessage(string $message, bool $forceHex = false) : string
-	{
-
-		if ($forceHex) {
+	{ 
+		if ($forceHex) 
+		{
 			if (substr($message, 0, 2) == '0x') {
 				$message  = substr($message, 2);
 				if (ctype_xdigit($message)) {
@@ -138,8 +138,7 @@ class Accounts
 				} else {
 					return "";
 				}
-			}
-
+			} 
 		}
 
 		$msglen = strlen($message);
