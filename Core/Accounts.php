@@ -127,26 +127,16 @@ class Accounts
 	}
   
 
-<<<<<<< HEAD
 	public static function hashMessage(string $message, bool $forceHex = true) : string
-	{
-
-		if ($forceHex) {
-=======
-	public static function hashMessage(string $message, bool $forceHex = false) : string
 	{ 
-		if ($forceHex) 
-		{
->>>>>>> 38fe17633eec26d82373bdf6b11036decf11aab8
-			if (substr($message, 0, 2) == '0x') {
-				$message  = substr($message, 2);
-				if (ctype_xdigit($message)) {
-					$message = hex2bin($message);
-				} else {
-					return "";
-				}
-			} 
-		}
+		if ($forceHex && substr($message, 0, 2) == '0x') {
+			$message  = substr($message, 2);
+			if (ctype_xdigit($message)) {
+				$message = hex2bin($message);
+			} else {
+				return "";
+			}
+		} 
 
 		$msglen = strlen($message);
 		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256.
