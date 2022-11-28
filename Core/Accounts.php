@@ -25,9 +25,9 @@ class Account
 	public string $publicKey;
 	public string $address;
 
-	public function sign(string $message, bool $forceHex = true)
+	public function sign(string $message)
 	{ 
-		$hash = Accounts::hashMessage($message, $forceHex);
+		$hash = Accounts::hashMessage($message);
 		$signature = $this->signRaw($hash);
 		$signature->message = $message;
 
@@ -127,16 +127,16 @@ class Accounts
 	}
   
 
-	public static function hashMessage(string $message, bool $forceHex = true) : string
+	public static function hashMessage(string $message) : string
 	{ 
-		if ($forceHex && substr($message, 0, 2) == '0x') {
+		if (substr($message, 0, 2) == '0x') {
 			$message  = substr($message, 2);
-			if (ctype_xdigit($message)) {
+			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
 				$message = hex2bin($message);
 			} else {
-				return "";
+				$message = '0x' . $message;
 			}
-		} 
+		}
 
 		$msglen = strlen($message);
 		//"\x19Ethereum Signed Message:\n" + message.length + message and hashed using keccak256.
@@ -163,16 +163,17 @@ class Accounts
 	} 
 
 
-	public static function signedMessageToPublicKey(string $message, string $signature, bool $forceHex = true) : string
+	public static function signedMessageToPublicKey(string $message, string $signature) : string
 	{
-		if ($forceHex && substr($message, 0, 2) == '0x') {
+		if (substr($message, 0, 2) == '0x') {
 			$message  = substr($message, 2);
-			if (ctype_xdigit($message)) {
+			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
 				$message = hex2bin($message);
 			} else {
-				return "";
+				$message = '0x' . $message;
 			}
 		}
+
 
 		$msglen = strlen($message);
 		$hash   = Keccak::hash("\x19Ethereum Signed Message:\n{$msglen}{$message}", 256);
@@ -189,15 +190,15 @@ class Accounts
 	}
 
 
-	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey, bool $forceHex = true) : bool
+	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey) : bool
 	{ 
-		return $publicKey == self::signedMessageToPublicKey($message, $signature, $forceHex);
+		return $publicKey == self::signedMessageToPublicKey($message, $signature);
 	}
 
 
-	public static function verifySignatureWithAddress(string $message, string $signature, string $address, bool $forceHex = true) : bool
+	public static function verifySignatureWithAddress(string $message, string $signature, string $address) : bool
 	{
-		$publicKey = self::signedMessageToPublicKey($message, $signature, $forceHex);
+		$publicKey = self::signedMessageToPublicKey($message, $signature);
 		$message_address = self::publicKeyToAddress($publicKey);
 
 		return $address == $message_address;
