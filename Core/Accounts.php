@@ -25,7 +25,7 @@ class Account
 	public string $publicKey;
 	public string $address;
 
-	public function sign(string $message, bool $forceHex = false)
+	public function sign(string $message, bool $forceHex = true)
 	{ 
 		$hash = Accounts::hashMessage($message, $forceHex);
 		$signature = $this->signRaw($hash);
@@ -127,7 +127,7 @@ class Accounts
 	}
   
 
-	public static function hashMessage(string $message, bool $forceHex = false) : string
+	public static function hashMessage(string $message, bool $forceHex = true) : string
 	{
 
 		if ($forceHex) {
@@ -167,8 +167,17 @@ class Accounts
 	} 
 
 
-	public static function signedMessageToPublicKey(string $message, string $signature) : string
+	public static function signedMessageToPublicKey(string $message, string $signature, bool $forceHex = true) : string
 	{
+		if ($forceHex && substr($message, 0, 2) == '0x') {
+			$message  = substr($message, 2);
+			if (ctype_xdigit($message)) {
+				$message = hex2bin($message);
+			} else {
+				return "";
+			}
+		}
+
 		$msglen = strlen($message);
 		$hash   = Keccak::hash("\x19Ethereum Signed Message:\n{$msglen}{$message}", 256);
 		$sign   = ["r" => substr($signature, 2, 64), 
@@ -184,15 +193,15 @@ class Accounts
 	}
 
 
-	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey) : bool
+	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey, bool $forceHex = true) : bool
 	{ 
-		return $publicKey == self::signedMessageToPublicKey($message, $signature);
+		return $publicKey == self::signedMessageToPublicKey($message, $signature, $forceHex);
 	}
 
 
-	public static function verifySignatureWithAddress(string $message, string $signature, string $address) : bool
+	public static function verifySignatureWithAddress(string $message, string $signature, string $address, bool $forceHex = true) : bool
 	{
-		$publicKey = self::signedMessageToPublicKey($message, $signature);
+		$publicKey = self::signedMessageToPublicKey($message, $signature, $forceHex);
 		$message_address = self::publicKeyToAddress($publicKey);
 
 		return $address == $message_address;
