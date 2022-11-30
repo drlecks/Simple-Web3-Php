@@ -45,7 +45,7 @@ var_dump(Accounts::hashMessage('Some data'));
 var_dump("Sign message 'Some data' Should be:");
 var_dump("signature: 0xb91467e570a6466aa9e9876cbcd013baba02900b8979d43fe208a4a4f339f5fd6007e74cd82e037b800186422fc2da167c747ef045e5d18a5f5d4300f8e1a0291c"); 
 $account3 = Accounts::privateKeyToAccount('0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318');
-$res = $account3->sign('Some data', true); 
+$res = $account3->sign('Some data'); 
 var_dump($res); 
 
 

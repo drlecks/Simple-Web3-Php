@@ -25,9 +25,9 @@ class Account
 	public string $publicKey;
 	public string $address;
 
-	public function sign(string $message, bool $forceHex = false)
+	public function sign(string $message)
 	{ 
-		$hash = Accounts::hashMessage($message, $forceHex);
+		$hash = Accounts::hashMessage($message);
 		$signature = $this->signRaw($hash);
 		$signature->message = $message;
 
@@ -127,18 +127,15 @@ class Accounts
 	}
   
 
-	public static function hashMessage(string $message, bool $forceHex = false) : string
+	public static function hashMessage(string $message) : string
 	{ 
-		if ($forceHex) 
-		{
-			if (substr($message, 0, 2) == '0x') {
-				$message  = substr($message, 2);
-				if (ctype_xdigit($message)) {
-					$message = hex2bin($message);
-				} else {
-					return "";
-				}
-			} 
+		if (substr($message, 0, 2) == '0x') {
+			$message  = substr($message, 2);
+			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
+				$message = hex2bin($message);
+			} else {
+				$message = '0x' . $message;
+			}
 		}
 
 		$msglen = strlen($message);
@@ -168,6 +165,16 @@ class Accounts
 
 	public static function signedMessageToPublicKey(string $message, string $signature) : string
 	{
+		if (substr($message, 0, 2) == '0x') {
+			$message  = substr($message, 2);
+			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
+				$message = hex2bin($message);
+			} else {
+				$message = '0x' . $message;
+			}
+		}
+
+
 		$msglen = strlen($message);
 		$hash   = Keccak::hash("\x19Ethereum Signed Message:\n{$msglen}{$message}", 256);
 		$sign   = ["r" => substr($signature, 2, 64), 
