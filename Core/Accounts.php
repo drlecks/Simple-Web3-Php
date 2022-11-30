@@ -130,11 +130,9 @@ class Accounts
 	public static function hashMessage(string $message) : string
 	{ 
 		if (substr($message, 0, 2) == '0x') {
-			$message  = substr($message, 2);
-			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
-				$message = hex2bin($message);
-			} else {
-				$message = '0x' . $message;
+			$removed_prefix = substr($message, 2);
+			if (ctype_xdigit($removed_prefix) && strlen($removed_prefix) % 2 == 0) {
+				$message = hex2bin($removed_prefix);
 			}
 		}
 
@@ -163,43 +161,30 @@ class Accounts
 	} 
 
 
-	public static function signedMessageToPublicKey(string $message, string $signature) : string
-	{
-		if (substr($message, 0, 2) == '0x') {
-			$message  = substr($message, 2);
-			if (ctype_xdigit($message) && strlen($message) % 2 == 0) {
-				$message = hex2bin($message);
-			} else {
-				$message = '0x' . $message;
-			}
-		}
+	public static function signedMessageToAddress(string $message, string $signature) : string
+	{  
+		$hash   = self::hashMessage($message); 
 
-
-		$msglen = strlen($message);
-		$hash   = Keccak::hash("\x19Ethereum Signed Message:\n{$msglen}{$message}", 256);
-		$sign   = ["r" => substr($signature, 2, 64), 
-				   "s" => substr($signature, 66, 64)];
+		if (ctype_xdigit($signature) && substr($signature, 0, 2) == '0x') {
+			$signature = substr($signature, 2); 
+		} 
+		$sign   = ["r" => substr($signature, 2, 64), "s" => substr($signature, 66, 64)];
 		$recid  = ord(hex2bin(substr($signature, 130, 2))) - 27; 
-		if ($recid != ($recid & 1)) 
-			return false;
-	
+  
+		if ($recid != ($recid & 1))  {
+			throw new Exception("Signature recovery not valid");
+		}
+ 
 		$ec = new EC('secp256k1');
-		$pubEcKey = $ec->recoverPubKey($hash, $sign, $recid);
-	
-		return $pubEcKey->encode("hex");
-	}
+		$pubEcKey = $ec->recoverPubKey($hash, $sign, $recid); 
 
-
-	public static function verifySignatureWithPublicKey(string $message, string $signature, string $publicKey) : bool
-	{ 
-		return $publicKey == self::signedMessageToPublicKey($message, $signature);
-	}
+		return self::publicKeyToAddress($pubEcKey->encode("hex")); 
+	} 
 
 
 	public static function verifySignatureWithAddress(string $message, string $signature, string $address) : bool
 	{
-		$publicKey = self::signedMessageToPublicKey($message, $signature);
-		$message_address = self::publicKeyToAddress($publicKey);
+		$message_address = self::signedMessageToAddress($message, $signature); 
 
 		return $address == $message_address;
 	}

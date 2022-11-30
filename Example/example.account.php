@@ -49,6 +49,16 @@ $res = $account3->sign('Some data');
 var_dump($res); 
 
 
+var_dump("Reverse the last signed message. Should be:");  
+var_dump("address: $account3->address");  
+$address = Accounts::signedMessageToAddress('Some data', $res->signature);   
+var_dump("res: $address");  
+  
+
+var_dump("Check Signature With Address:"); 
+$state = Accounts::verifySignatureWithAddress('Some data', $res->signature, $account3->address);  
+var_dump($state ? "OK": "ERROR");
+
 //EXIT
 exit(0);
      
