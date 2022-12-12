@@ -9,6 +9,7 @@
  * @license MIT 
  */
 
+ //https://docs.soliditylang.org/en/develop/abi-spec.html
 
 namespace SWeb3;
 
@@ -22,6 +23,8 @@ abstract class VariableType
     const Int = 5;
     const UInt = 6;
 	const Bool = 7;
+	const Bytes = 8;
+	const BytesFixed = 9;
 }
 
 
@@ -90,28 +93,27 @@ class ABI
  
 
     private static function GetParameterType(?string $abi_string_type)
-    { 
-		if(str_contains($abi_string_type, 'byte[')) {
-			$abi_string_type = 'string' .  substr($abi_string_type, strpos($abi_string_type, ']'));
-		} 
-  
-		//dynamic
-        if (str_contains($abi_string_type, 'tuple'))         return VariableType::Tuple;
-        else if (str_contains($abi_string_type, 'string'))   return VariableType::String;
-        else if (str_contains($abi_string_type, 'bytes'))    return VariableType::String;
-        else if (str_contains($abi_string_type, 'byte[]'))   return VariableType::String;
-        
-		//static
-		else if (str_contains($abi_string_type, 'uint') )     return VariableType::UInt;
-        else if (str_contains($abi_string_type, 'int') )     return VariableType::Int;
-        else if (str_contains($abi_string_type, 'fixed') )   return VariableType::Int;
-        else if (str_contains($abi_string_type, 'bool'))     return VariableType::Bool;
-        else if (str_contains($abi_string_type, 'address'))  return VariableType::Address;
-        else
-        {
-            var_dump("parameter error: " . $abi_string_type);
-        }
+    {   
+		//bytes
+		if ($abi_string_type == 'bytes')    							return VariableType::Bytes; 
+		else if  (Utils::string_contains($abi_string_type, 'bytes')) 	return VariableType::BytesFixed;
 
+		//dynamic
+        else if (Utils::string_contains($abi_string_type, 'tuple'))         	return VariableType::Tuple;
+        else if (Utils::string_contains($abi_string_type, 'string'))   	return VariableType::String;
+         
+		//static 
+		else if (Utils::string_contains($abi_string_type, 'uint') )    	return VariableType::UInt;
+        else if (Utils::string_contains($abi_string_type, 'int') )     	return VariableType::Int;
+        else if (Utils::string_contains($abi_string_type, 'fixed') )   	return VariableType::Int;
+        else if (Utils::string_contains($abi_string_type, 'bool'))     	return VariableType::Bool;
+        else if (Utils::string_contains($abi_string_type, 'address'))  	return VariableType::Address;
+        
+		//error
+		else {
+			var_dump("parameter error: " . $abi_string_type); 
+		}
+		 
 		return VariableType::Int;
     }
 
@@ -121,7 +123,8 @@ class ABI
 		return ($vType == VariableType::UInt 
 				|| $vType == VariableType::Int
 				|| $vType == VariableType::Bool
-				|| $vType == VariableType::Address);
+				|| $vType == VariableType::Address
+				|| $vType == VariableType::BytesFixed);
     }
 
 
@@ -255,7 +258,7 @@ class ABI
     }
 
      
-    public static function EncodeGroup($inputs, $data)
+    public static function EncodeGroup(array $inputs, array $data) : string
     { 
         $hashData = "";
         $currentDynamicIndex = count($inputs) * self::NUM_ZEROS / 2; 
@@ -284,6 +287,39 @@ class ABI
  
         return $hashData;
     }
+
+
+	public static function EncodeParameters_External(array $input_types, array $data) : string
+    { 
+		$inputs = array();
+		foreach($input_types as $it) {
+			$input = new stdClass();
+			$input->type = $it;
+			$inputs []= $input;
+		}
+ 
+        return '0x' . self::EncodeGroup($inputs, $data);
+    }
+
+
+	public static function EncodeParameter_External(string $input_name, $data) : string
+    { 
+        $hashData = "";
+		$currentDynamicIndex = self::NUM_ZEROS / 2;
+
+		$input = new stdClass();
+		$input->type = $input_name;
+
+		$hashData .= self::EncodeInput($input, $data, 1, $currentDynamicIndex); 
+
+		if(isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
+
+        $hashData .= self::EncodeInput($input, null, 2, $currentDynamicIndex); 
+ 
+        return '0x' . $hashData;
+    }
+
+	
 
 
     private static function EncodeInput_Array($input_type, $inputData)
@@ -327,7 +363,7 @@ class ABI
             $varType = self::GetParameterType($input_type);
 
             //dynamic
-            if(str_contains($input->type, '['))
+            if (Utils::string_contains($input->type, '['))
             {
                 $last_array_marker = strrpos($input->type, '[');  
                 $clean_type = substr($input->type, 0, $last_array_marker); 
@@ -336,7 +372,7 @@ class ABI
                 $res = self::EncodeInput_UInt($currentDynamicIndex); 
                 return $res; 
             }
-            else if  ($varType == VariableType::Tuple)
+            else if ($varType == VariableType::Tuple)
             {
                 $input->hash =  self::EncodeGroup($input->components, $inputData);
                 $res = self::EncodeInput_UInt($currentDynamicIndex); 
@@ -344,6 +380,11 @@ class ABI
             }
             else if ($varType == VariableType::String) {
                 $input->hash = self::EncodeInput_String($inputData);
+                $res = self::EncodeInput_UInt($currentDynamicIndex);  
+                return $res;
+            }
+			else if ($varType == VariableType::Bytes) {
+                $input->hash = self::EncodeInput_Bytes($inputData);
                 $res = self::EncodeInput_UInt($currentDynamicIndex);  
                 return $res;
             }
@@ -359,6 +400,9 @@ class ABI
             }
             else if ($varType == VariableType::Address) { 
                 return self::EncodeInput_Address($inputData);
+            }  
+			else if ($varType == VariableType::BytesFixed) { 
+                return self::EncodeInput_BytesFixed($inputData);
             }  
         }
         else if($round == 2)
@@ -410,11 +454,50 @@ class ABI
         $hash = self::AddZeros(substr($data, 2), true); 
         return  $hash;
     }
-
-    private static function EncodeInput_String($data)
-    { 
+ 
+	private static function EncodeInput_String($data)
+    {  
         //length + hexa string
         $hash = self::EncodeInput_UInt(strlen($data)) . self::AddZeros(bin2hex($data), false);  
+
+        return  $hash;
+    }
+
+	private static function EncodeInput_Bytes($data)
+    { 
+		$hexa = $data;
+
+		//if data is not a valid hexa, it means its a binary rep
+		if (substr($data, 0, 2) != '0x' || !ctype_xdigit(substr($data, 2)) || strlen($data) % 2 != 0) { 
+			$hexa = bin2hex($data); 
+		}
+
+		if (substr($hexa, 0, 2) == '0x') {
+			$hexa = substr($hexa, 2);
+		}
+
+        //length + hexa string
+        $hash = self::EncodeInput_UInt(strlen($hexa) / 2) . self::AddZeros($hexa, false);  
+
+        return  $hash;
+    }
+
+
+	private static function EncodeInput_BytesFixed($data)
+    { 
+		$hexa = $data;
+
+		//if data is not a valid hexa, it means its a binary rep
+		if (substr($data, 0, 2) == '0x' || !ctype_xdigit(substr($data, 2)) || strlen($data) % 2 != 0) { 
+			$hexa = substr($data, 2); 
+		}
+
+		if (substr($hexa, 0, 2) == '0x') {
+			$hexa = substr($hexa, 2);
+		}
+
+        //length + hexa string
+        $hash = self::AddZeros($hexa, false);  
 
         return  $hash;
     }
@@ -475,13 +558,13 @@ class ABI
         $encoded = substr($encoded, 2);
         $function = $this->GetFunction($function_name);  
 
-        $decoded = $this->DecodeGroup($function->outputs, $encoded, 0);
+        $decoded = self::DecodeGroup($function->outputs, $encoded, 0);
 
         return $decoded;
     }
 
 
-    public function DecodeGroup($outputs, $encoded, $index)
+    public static function DecodeGroup($outputs, $encoded, $index)
     { 
         $group = new stdClass();
         $first_index = $index;
@@ -496,17 +579,18 @@ class ABI
             $varType = self::GetParameterType($output_type);
              
             //dynamic
-            if(str_contains($output->type, '['))
+            if(Utils::string_contains($output->type, '['))
             {  
                 $last_array_marker = strrpos($output->type, '[');  
                 $clean_type = substr($output->type, 0, $last_array_marker); 
                 $var_name = $output->name != '' ? $output->name : 'array_'.$array_count; 
-				$dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2; 
+				$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
  
-                $group->$var_name = $this->DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start); 
+                $group->$var_name = self::DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start); 
                 $array_count++;
             }
-            else if ($varType == VariableType::Tuple) { 
+            else if ($varType == VariableType::Tuple) 
+			{ 
                 $var_name = $output->name != '' ? $output->name : 'tuple_'.$tuple_count; 
 
 				//tuples with only static parameters have no initial tuple offset
@@ -514,25 +598,32 @@ class ABI
 				$hasDynamicParameters = self::ExistsDynamicParameter($output->components); 
 				if($hasDynamicParameters)
 				{ 
-					$dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2; 
+					$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
 				} 
 				 
-                $group->$var_name = $this->DecodeGroup($output->components, $encoded, $dynamic_data_start); 
+                $group->$var_name = self::DecodeGroup($output->components, $encoded, $dynamic_data_start); 
                 $tuple_count++;
             }
-            else if ($varType == VariableType::String) { 
+            else if ($varType == VariableType::String) 
+			{ 
                 $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
-                $dynamic_data_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $group->$var_name = $this->DecodeInput_String($encoded, $dynamic_data_start);  
+                $dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
+                $group->$var_name = self::DecodeInput_String($encoded, $dynamic_data_start);  
+            }
+			else if ($varType == VariableType::Bytes) 
+			{ 
+                $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
+                $dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
+                $group->$var_name = self::DecodeInput_Bytes($encoded, $dynamic_data_start);  
             }
             //static
             else
             {
 				$var_name = 'result';
 				if($output->name != '')  $var_name = $output->name;
-				else if($output_count > 1) 'elem_'.$elem_index; 
+				else if($output_count > 1) $var_name = 'elem_'.$elem_index; 
  
-                $group->$var_name = $this->DecodeInput_Generic($varType, $encoded, $index);   
+                $group->$var_name = self::DecodeInput_Generic($varType, $encoded, $index);   
             }  
 
             $elem_index++;
@@ -541,33 +632,73 @@ class ABI
 
         return $group; 
     } 
- 
 
 
+	public static function DecodeParameter_External(string $output_type, string $encoded)
+    { 
+		$output = new stdClass();
+		$output->type = $output_type; 
+		$varType = self::GetParameterType($output_type);
+		$dynamic_data_start = self::NUM_ZEROS;
+
+		$res = "";
+
+		if (substr($encoded, 0, 2) == '0x') {
+			$encoded = substr($encoded, 2);
+		}
+
+		//dynamic
+		if(Utils::string_contains($output->type, '['))
+		{  
+			$last_array_marker = strrpos($output->type, '[');  
+			$clean_type = substr($output->type, 0, $last_array_marker);    
+			$res = self::DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start);  
+		}
+		else if ($varType == VariableType::Tuple) 
+		{ 
+			//tuples with only static parameters have no initial tuple offset 
+			$res = self::DecodeGroup($output->components, $encoded, $dynamic_data_start);  
+		}
+		else if ($varType == VariableType::String) 
+		{   
+			$res = self::DecodeInput_String($encoded, $dynamic_data_start);  
+		}
+		else if ($varType == VariableType::Bytes) 
+		{   
+			$res = self::DecodeInput_Bytes($encoded, $dynamic_data_start);  
+		}
+		//simple 
+		else
+		{   
+			$res = self::DecodeInput_Generic($varType, $encoded, 0);   
+		}   
+
+        return $res; 
+    }  
 	
 
 	
-    private function DecodeInput_Array($output, $array_inner_type, $encoded, $index)
+    private static function DecodeInput_Array($output, $array_inner_type, $encoded, $index)
     {
         $array = [];
         $first_index = $index;  
 
         $varType = self::GetParameterType($array_inner_type);
 
-        $length = $this->DecodeInput_UInt_Internal($encoded, $first_index); 
+        $length = self::DecodeInput_UInt_Internal($encoded, $first_index); 
         $first_index += self::NUM_ZEROS;
         $index += self::NUM_ZEROS;  
   
         for($i = 0; $i < $length; $i++)
         {  
             $res = "error"; 
-            if (str_contains($array_inner_type, '[')) 
+            if (Utils::string_contains($array_inner_type, '[')) 
 			{   
                 $last_array_marker = strrpos($array_inner_type, '[');  
                 $clean_type = substr($array_inner_type, 0, $last_array_marker);
  
-                $element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $res = $this->DecodeInput_Array($output, $clean_type, $encoded, $element_start); 
+                $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
+                $res = self::DecodeInput_Array($output, $clean_type, $encoded, $element_start); 
 
 				$index += self::NUM_ZEROS;
             }
@@ -577,7 +708,7 @@ class ABI
 				$hasDynamicParameters = self::ExistsDynamicParameter($output->components);  
 				if($hasDynamicParameters)
 				{ 
-					$element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2; 
+					$element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
 					$index += self::NUM_ZEROS;
 				}
 				else
@@ -586,17 +717,23 @@ class ABI
 					$index += self::NUM_ZEROS * count($output->components);
 				} 
 
-                $res = $this->DecodeGroup($output->components, $encoded, $element_start);  
+                $res = self::DecodeGroup($output->components, $encoded, $element_start);  
             }
             else if($varType == VariableType::String) 
 			{ 
-                $element_start = $first_index + $this->DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $res = $this->DecodeInput_String($encoded, $element_start);  
+                $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
+                $res = self::DecodeInput_String($encoded, $element_start);  
+				$index += self::NUM_ZEROS;
+            }
+			else if($varType == VariableType::Bytes) 
+			{ 
+                $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
+                $res = self::DecodeInput_Bytes($encoded, $element_start);  
 				$index += self::NUM_ZEROS;
             }
             else 
 			{
-                $res = $this->DecodeInput_Generic($varType, $encoded, $index); 
+                $res = self::DecodeInput_Generic($varType, $encoded, $index); 
 				$index += self::NUM_ZEROS;
             }
             
@@ -606,48 +743,53 @@ class ABI
         return $array;
     }
 
-
  
-    private function DecodeInput_Generic($variableType, $encoded, $start)
+    private static function DecodeInput_Generic($variableType, $encoded, $start)
     {
         if($variableType == VariableType::String) {
-            return $this->DecodeInput_String($encoded, $start);
+            return self::DecodeInput_String($encoded, $start);
         }
         else if($variableType == VariableType::UInt) {
-            return $this->DecodeInput_UInt($encoded, $start);
+            return self::DecodeInput_UInt($encoded, $start);
         }
 		else if($variableType == VariableType::Int) {
-            return $this->DecodeInput_Int($encoded, $start);
+            return self::DecodeInput_Int($encoded, $start);
         }
         else if($variableType == VariableType::Bool) {
-            return $this->DecodeInput_Bool($encoded, $start);
+            return self::DecodeInput_Bool($encoded, $start);
         }
         else if($variableType == VariableType::Address) {
-            return $this->DecodeInput_Address($encoded, $start);
+            return self::DecodeInput_Address($encoded, $start);
+        }
+		else if($variableType == VariableType::BytesFixed) {
+            return self::DecodeInput_BytesFixed($encoded, $start);
+        }
+		else if($variableType == VariableType::Bytes) {
+            return self::DecodeInput_Bytes($encoded, $start);
         }
     }
 
  
-	private function DecodeInput_UInt_Internal($encoded, $start)
+	private static function DecodeInput_UInt_Internal($encoded, $start)
     {
-        $partial = substr($encoded, $start, 64);   
-        $partial = $this->RemoveZeros($partial, true); 
+        $partial = substr($encoded, $start, 64);    
+        $partial = self::RemoveZeros($partial, true); 
         return hexdec($partial);
     }
 
 
-    private function DecodeInput_UInt($encoded, $start)
-    {
+    private static function DecodeInput_UInt($encoded, $start)
+    { 
         $partial = substr($encoded, $start, 64);   
-        $partial = $this->RemoveZeros($partial, true);  
-   
+        $partial = self::RemoveZeros($partial, true);  
+    
 		$partial_big = new BigNumber($partial, 16);
 
 		return $partial_big;
     }
 
 
-	private function DecodeInput_Int($encoded, $start)
+	private static function DecodeInput_Int($encoded, $start)
     {
         $partial = substr($encoded, $start, 64);     
 		$partial_big = new BigNumber($partial, -16);
@@ -656,24 +798,41 @@ class ABI
     }
 
 
-    private function DecodeInput_Bool($encoded, $start)
+    private static function DecodeInput_Bool($encoded, $start)
     {
         $partial = substr($encoded, $start, 64);
-        $partial = $this->RemoveZeros($partial, true); 
+        $partial = self::RemoveZeros($partial, true); 
         return $partial == '1';
     }
 
 	
-    private function DecodeInput_Address($encoded, $start)
+    private static function DecodeInput_Address($encoded, $start)
     {
-        $partial = $this->RemoveZeros(substr($encoded, $start, 64), true);  
+        $partial = self::RemoveZeros(substr($encoded, $start, 64), true);  
         return '0x'.$partial;
     }
 
 
-    private function DecodeInput_String($encoded, $start)
+    private static function DecodeInput_String($encoded, $start)
+    {  
+        $length = self::DecodeInput_UInt_Internal($encoded, $start); 
+        $start += self::NUM_ZEROS; 
+
+        $partial = substr($encoded, $start, $length * 2); 
+        return hex2bin($partial);
+    }
+
+
+	private static function DecodeInput_BytesFixed($encoded, $start)
     { 
-        $length = $this->DecodeInput_UInt_Internal($encoded, $start); 
+        $partial = self::RemoveZeros(substr($encoded, $start, 64), false);  
+        return hex2bin($partial);
+    }
+
+
+	private static function DecodeInput_Bytes($encoded, $start)
+    { 
+        $length = self::DecodeInput_UInt_Internal($encoded, $start); 
         $start += self::NUM_ZEROS;
 
         $partial = substr($encoded, $start, $length * 2); 
@@ -681,7 +840,7 @@ class ABI
     }
  
 
-    private function RemoveZeros($data, $remove_left)
+    private static function RemoveZeros($data, $remove_left)
     {
         $index = $remove_left ? 0 : strlen($data) - 1;
         $current = substr($data, $index, 1); 

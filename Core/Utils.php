@@ -780,4 +780,11 @@ class Utils
 	{
 		return bin2hex(openssl_random_pseudo_bytes($length / 2));   
 	}
+
+
+	public static function string_contains(string $haystack, string $needle)
+	{
+		return empty($needle) || strpos($haystack, $needle) !== false;
+	}
+ 
 }

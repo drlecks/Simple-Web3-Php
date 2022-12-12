@@ -279,17 +279,7 @@ class SWeb3
         return $result;
     }
 	
-}
-
-
-
- 
-function str_contains(string $haystack, string $needle)
-{
-    return empty($needle) || strpos($haystack, $needle) !== false;
-}
- 
-
+} 
 
  
 

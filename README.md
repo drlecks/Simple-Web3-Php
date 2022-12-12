@@ -73,12 +73,12 @@ Hex to Big Number:
 use SWeb3\Utils;
 
 $res = $sweb3->call('eth_blockNumber', []);
-$bigNum = $sweb3->utils->hexToBn($res->result);
+$bigNum = Utils::hexToBn($res->result);
 ``` 
 
 Number to BigNumber:
 ```php 
-$bigNum = $sweb3->utils->ToBn(123);
+$bigNum = Utils::ToBn(123);
 ``` 
 
 Get average-human readable string representation from Big Number:
@@ -88,7 +88,7 @@ $s_number = $bigNum->toString();
 
 Format 1 ether to wei (unit required for ether values in transactions):
 ```php 
-$sweb3->utils->toWei('0.001', 'ether');
+Utils::toWei('0.001', 'ether');
 ``` 
 
 Get average-human readable string representation from a value conversion:
@@ -113,10 +113,10 @@ $gasPrice = $sweb3->getGasPrice();
 ```php 
 $sweb3->chainId = '0x3';//ropsten 
 $sendParams = [ 
-    'from' =>   $sweb3->personal->address,  
+    'from' =>	$sweb3->personal->address,  
     'to' =>     '0x1111111111111111111111111111111111111111', 
-    'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->personal->getNonce()  
+    'value' => 	Utils::toWei('0.001', 'ether'),
+    'nonce' => 	$sweb3->personal->getNonce()  
 ]; 
 $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```
@@ -125,11 +125,11 @@ $gasEstimateResult = $sweb3->call('eth_estimateGas', [$sendParams]);
 ```php
 //remember to set personal data first with a valid pair of address & private key
 $sendParams = [ 
-    'from' =>   $sweb3->personal->address,  
-    'to' =>     '0x1111111111111111111111111111111111111111', 
-    'gasLimit' => 210000,
-    'value' => $sweb3->utils->toWei('0.001', 'ether'),
-    'nonce' => $sweb3->personal->getNonce()
+    'from' =>   	$sweb3->personal->address,  
+    'to' =>     	'0x1111111111111111111111111111111111111111', 
+    'gasLimit' => 	210000,
+    'value' => 		Utils::toWei('0.001', 'ether'),
+    'nonce' => 		$sweb3->personal->getNonce()
 ];    
 $result = $sweb3->send($sendParams); 
 ```
