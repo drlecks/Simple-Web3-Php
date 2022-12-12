@@ -520,10 +520,13 @@ class ABI
 
     private static function AddZeros($data, $add_left)
     { 
-        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
+		$remaining = strlen($data);
+		if ($remaining > self::NUM_ZEROS) $remaining %= self::NUM_ZEROS;
+        $total = self::NUM_ZEROS - $remaining;
+
         $res = $data;
 
-        if($total > 0) {
+        if ($total > 0) {
             for($i=0; $i < $total; $i++) {
                 if($add_left)   $res = '0'.$res;
                 else            $res .= '0';
@@ -532,13 +535,17 @@ class ABI
          
         return $res;
     }
+	
 
 	private static function AddNegativeF($data, $add_left)
     { 
-        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
+		$remaining = strlen($data);
+		if ($remaining > self::NUM_ZEROS) $remaining %= self::NUM_ZEROS;
+        $total = self::NUM_ZEROS - $remaining; 
+
         $res = $data;
 
-        if($total > 0) {
+        if ($total > 0) {
             for($i=0; $i < $total; $i++) {
                 if($add_left)   $res = 'f'.$res;
                 else            $res .= 'f';
@@ -548,14 +555,18 @@ class ABI
         return $res;
     }
 
+
 	private static function AddZerosOrF($data, $add_left)
     { 
-		$valueToAdd = (strtolower($data[0]) == 'f' && strlen($data) == 16) ? 'f' : '0';
+		$valueToAdd = (strtolower($data[0]) == 'f' && strlen($data) == 16) ? 'f' : '0'; 
 
-        $total = self::NUM_ZEROS - (strlen($data) % self::NUM_ZEROS);
+		$remaining = strlen($data);
+		if ($remaining > self::NUM_ZEROS) $remaining %= self::NUM_ZEROS;
+        $total = self::NUM_ZEROS - $remaining; 
+
         $res = $data;
 
-        if($total > 0) {
+        if ($total > 0) {
             for($i=0; $i < $total; $i++) {
                 if($add_left)   $res = $valueToAdd.$res;
                 else            $res .= $valueToAdd;
