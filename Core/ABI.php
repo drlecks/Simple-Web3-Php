@@ -29,6 +29,7 @@ abstract class VariableType
 
 
 use stdClass; 
+use Exception;
 use kornrunner\Keccak;
 use phpseclib\Math\BigInteger as BigNumber;
 
@@ -417,27 +418,41 @@ class ABI
 
 	private static function EncodeInput_UInt($data)
     {  
-		if($data instanceof BigNumber) { 
+		if (is_string($data) && ctype_digit($data)) { 
+			$bn = Utils::toBn($data);
+			$hash = self::AddZeros($bn->toHex(true), true); 
+		} 
+		else if ($data instanceof BigNumber) { 
 			$hash = self::AddZeros($data->toHex(true), true); 
 		} 
-		else {
+		else if (is_int($data) || is_long($data)) {
 			$hash = self::AddZeros(dechex($data), true); 
 		} 
+		else {
+			throw new Exception("EncodeInput_UInt, not valid input type");
+		}
        
         return  $hash;
     }
 
 	private static function EncodeInput_Int($data)
     {   
-		if($data instanceof BigNumber) { 
+		if (is_string($data) && ctype_digit($data)) { 
+			$bn = Utils::toBn($data);
+			$hash = self::AddNegativeF($bn->toHex(true), true); 
+		} 
+		else if ($data instanceof BigNumber) { 
 			if($data->toString()[0] == '-')
 				$hash = self::AddNegativeF($data->toHex(true), true); 
 			else
 				$hash = self::AddZeros($data->toHex(true), true); 
 		} 
-		else {
+		else  if (is_int($data) || is_long($data)) {
 			$hash = self::AddZerosOrF(dechex($data), true); 
 		} 
+		else {
+			throw new Exception("EncodeInput_Int, not valid input type");
+		}
 		
         return  $hash;
     }

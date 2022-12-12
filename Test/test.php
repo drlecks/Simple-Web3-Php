@@ -27,13 +27,13 @@ use WTest;
 ?> <style>
 
 body {
-	font-family: Calibri, 'Trebuchet MS', sans-serif;
-	font-weight: normal;
-	line-height: 10px;
+	font-family: Calibri, 'Trebuchet MS', sans-serif; 
 }
 
 p {
 	font-size: 14px;
+	line-height: 10px;
+	font-weight: normal; 
 }
 
 </style><?
@@ -102,7 +102,7 @@ $res = Utils::toWeiString('1.001', 'kwei');
 WTest::check('1.001 kwei -> wei (1.001) ', $res == '1001'); 
 
 $res = Utils::toEtherString('100000000000000000', 'wei');
-WTest::check('100000000000000000 -> ether (0.1) ', $res == '0.1');  
+WTest::check('100000000000000000 wei-> ether (0.1) ', $res == '0.1');  
    
 
 
@@ -125,3 +125,6 @@ WTest::check('signedMessageToAddress', $res == $account3->address);
  
 $res = Accounts::verifySignatureWithAddress('Some data', $res_sign->signature, $account3->address);   
 WTest::check('verifySignatureWithAddress', $res);  
+
+
+ 
