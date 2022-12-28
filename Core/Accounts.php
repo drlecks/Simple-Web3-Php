@@ -46,8 +46,12 @@ class Account
 			throw new Exception("Private key must be length 64 + 2  (" . strlen($pk) . " provided)");
 		}
 			
-		$ec = new EC('secp256k1'); 
-		$ecPrivateKey = $ec->keyFromPrivate($pk, 'hex');  
+		$ec = new EC('secp256k1');
+		try {
+			$ecPrivateKey = $ec->keyFromPrivate(substr($pk, 2), 'hex');
+		} catch (Exception $e) {
+			$ecPrivateKey = $ec->keyFromPrivate($pk, 'hex');
+		}
 
 		//https://ethereum.stackexchange.com/questions/86485/create-signed-message-without-json-rpc-node-in-php
 		$signature = $ecPrivateKey->sign($hash, ['canonical' => true, "n" => null,]); 
