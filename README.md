@@ -66,12 +66,13 @@ $sweb3->setPersonalData($from_address, $from_address_private_key);
 ```
 
 ### Convert values 
-Most calls return Hex encoded strings to represent numbers. 
+- Most calls return hex or BigNumber to represent numbers. 
+- Most calls expect numeric parameters represented as BigNumbers.
 
 Hex to Big Number: 
 ```php 
 use SWeb3\Utils;
-
+ 
 $res = $sweb3->call('eth_blockNumber', []);
 $bigNum = Utils::hexToBn($res->result);
 ``` 

@@ -268,7 +268,7 @@ class ABI
         $i = 0; 
         foreach ($inputs as $pos => $input) 
         {     
-            $var_name = $input->name;
+            $var_name = is_object($input) ? $input->name : $input;
             $inputData = is_object($data) ? $data->$var_name : $data[$pos];  
             if (is_array($data) && $inputData == null) $inputData = $data[$var_name];
 
