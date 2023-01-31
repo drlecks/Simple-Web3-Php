@@ -909,7 +909,7 @@ class ABI
 			{
 				$input_type = is_string($input) ? $input : $input->type;
 				$varType = self::GetParameterType($input_type);
-				$res->indexed[$input->name] = $this->DecodeInput_Generic($varType, $log->topics[$indexed_index], $varType === VariableType::Address ? 2 : 0);
+				$res->indexed[$input->name] = $this->DecodeInput_Generic($varType, $log->topics[$indexed_index], 2);
 
 				$indexed_index++;
 			}
