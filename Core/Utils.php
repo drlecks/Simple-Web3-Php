@@ -76,7 +76,7 @@ class Utils
      * decoding hex number into decimal 
      * 
      * @param string  $value 
-     * @return  int
+     * @return  BigNumber
      */
     public static function hexToBn($value)
     {
