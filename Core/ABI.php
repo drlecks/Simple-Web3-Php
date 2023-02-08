@@ -229,7 +229,7 @@ class ABI
         if ($function === null || count($function->inputs) === 0)  {   
             $data = [];
         } 
-        else if ($data == null)  {
+        else if ($data === null)  {
             $data = [];
         } 
         else if(!is_array($data))  {
@@ -270,7 +270,7 @@ class ABI
         {     
             $var_name = is_object($input) ? $input->name : $input;
             $inputData = is_object($data) ? $data->$var_name : $data[$pos];  
-            if (is_array($data) && $inputData == null) $inputData = $data[$var_name];
+            if (is_array($data) && $inputData === null) $inputData = $data[$var_name];
 
             $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
   
