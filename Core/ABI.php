@@ -183,8 +183,10 @@ class ABI
             $hashData .= substr($sha3,0, 8);
         }
          
-        $hashData .= self::EncodeGroup($function->inputs, $data);
-        //var_dump($hashData);
+		if ($function !== null) {
+			$hashData .= self::EncodeGroup($function->inputs, $data);
+		}
+         
         return $hashData;
     }
 

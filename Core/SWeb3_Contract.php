@@ -110,7 +110,7 @@ class SWeb3_Contract
             throw new Exception('ERROR: you need to initialize bytecode to deploy the contract'); 
         }
 
-        $count_expected = isset($this->ABI->constructor->inputs) ? count($this->ABI->constructor->inputs) : 0;
+        $count_expected = isset($this->ABI->constructor) && isset($this->ABI->constructor->inputs) ? count($this->ABI->constructor->inputs) : 0;
         $count_received = count($inputs);
         if ($count_expected != $count_received) {
             throw new Exception('ERROR: contract constructor inputs number does not match... Expecting: ' . $count_expected . ' Received: ' . $count_received); 
