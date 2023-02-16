@@ -267,9 +267,9 @@ class ABI
         //parameters
         $i = 0; 
         foreach ($inputs as $pos => $input) 
-        {     
+        {      
             $var_name = is_object($input) ? $input->name : $input;
-            $inputData = is_object($data) ? $data->$var_name : $data[$pos];  
+            $inputData = is_object($data) ? $data->$var_name : $data[$pos];   
             if (is_array($data) && $inputData === null) $inputData = $data[$var_name];
 
             $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
@@ -295,6 +295,7 @@ class ABI
 		$inputs = array();
 		foreach($input_types as $it) {
 			$input = new stdClass();
+			$input->name = $it;
 			$input->type = $it;
 			$inputs []= $input;
 		}
