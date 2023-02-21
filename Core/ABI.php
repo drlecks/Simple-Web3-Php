@@ -276,7 +276,7 @@ class ABI
 
             $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
   
-            if(isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
+            if (isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
             $i++;
         }
 
@@ -316,7 +316,7 @@ class ABI
 
 		$hashData .= self::EncodeInput($input, $data, 1, $currentDynamicIndex); 
 
-		if(isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
+		if (isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
 
         $hashData .= self::EncodeInput($input, null, 2, $currentDynamicIndex); 
  
@@ -340,7 +340,8 @@ class ABI
             $input->type = $input_type;
             $inputs []= $input; 
             $hashData .= self::EncodeInput($input, $element, 1, $currentDynamicIndex);  
-            $currentDynamicIndex += strlen($input->hash) / 2; 
+
+            if (isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2; 
         }
 
         foreach($inputs as $pos => $input) 
