@@ -340,7 +340,6 @@ class ABI
             $input->type = $input_type;
             $inputs []= $input; 
             $hashData .= self::EncodeInput($input, $element, 1, $currentDynamicIndex);  
-            $currentDynamicIndex += strlen($input->hash) / 2; 
         }
 
         foreach($inputs as $pos => $input) 
