@@ -172,7 +172,7 @@ class ABI
     public function EncodeData($function_name, $data)   
     { 
         $function = $this->GetFunction($function_name);  
-        $data = $this->forceWrapperArray($function, $data);
+        $data = $this->forceWrapperArray($function, $data); 
 
         $hashData = "0x";
 
@@ -261,11 +261,11 @@ class ABI
     }
 
      
-    public static function EncodeGroup(array $inputs, array $data) : string
+    public static function EncodeGroup(array $inputs, $data) : string
     { 
-        $hashData = "";
+        $hashData = ""; 
         $currentDynamicIndex = count($inputs) * self::NUM_ZEROS / 2; 
-        
+         
         //parameters
         $i = 0; 
         foreach ($inputs as $pos => $input) 
@@ -280,21 +280,21 @@ class ABI
 
             $inputData = is_object($data) ? $data->$var_name : $data[$pos];   
             if (is_array($data) && $inputData === null) $inputData = $data[$var_name];
-
-            $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
   
+            $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
+ 
             if (isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2;
             $i++;
-        }
+        } 
 
         foreach($inputs as $pos => $input) { 
             $hashData .= self::EncodeInput($input, null, 2, $currentDynamicIndex); 
-        }
+        } 
 
         if (count($inputs) == 0) {
             $hashData .= self::NUM_ZEROS / 2;
         } 
- 
+  
         return $hashData;
     }
 
@@ -387,7 +387,12 @@ class ABI
             else if ($varType == VariableType::Tuple)
             {
                 $input->hash =  self::EncodeGroup($input->components, $inputData);
-                $res = self::EncodeInput_UInt($currentDynamicIndex); 
+
+				$res =  '';
+				if (self::ExistsDynamicParameter($input->components)) {
+					$res = self::EncodeInput_UInt($currentDynamicIndex); 
+				}
+                 
                 return $res;
             }
             else if ($varType == VariableType::String) {
