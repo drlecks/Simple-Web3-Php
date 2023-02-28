@@ -52,7 +52,7 @@ class ABI
         $this->functions = [];
         $this->events = [];
         $this->other_objects = [];
-        $this->events_encoded = [];
+        $this->events_encoded = []; 
         $parsedJSON = json_decode($baseJSON);
 
         foreach($parsedJSON as $func)
@@ -193,7 +193,7 @@ class ABI
 
     public function GetSignatureFromEvent($function)
     { 
-        $signature = $this->GetSignatureFromFunction($function);
+        $signature = $this->GetSignatureFromFunction($function); 
         return  '0x' . Keccak::hash($signature, 256);
     }
 
@@ -212,6 +212,7 @@ class ABI
         {
             $type = $input->type;
             if ($type == 'tuple') $type = $this->GetSignatureFromFunction_Inputs($input->components);
+			else if ($type == 'tuple[]') $type = $this->GetSignatureFromFunction_Inputs($input->components) . '[]';
             else if ($type == 'uint' || $type == 'int') $type .= '256';
             else if ($type == 'uint[]') $type = 'uint256[]';
             else if ($type == 'int[]') $type = 'int256[]';
@@ -219,7 +220,7 @@ class ABI
             $signature .= $type . ',';
         }
 
-        if(count($function_inputs) > 0)  $signature = substr($signature, 0, -1); 
+        if (count($function_inputs) > 0)  $signature = substr($signature, 0, -1); 
         $signature .= ')';
 
         return $signature;
