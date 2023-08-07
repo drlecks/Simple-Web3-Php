@@ -14,7 +14,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 include_once("../vendor/autoload.php");
-include_once("test.core.php");
+include_once("inc/inc.wtest.php");
 
 use stdClass;
 use SWeb3\Accounts; 
