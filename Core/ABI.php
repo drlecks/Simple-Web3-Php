@@ -265,7 +265,27 @@ class ABI
     public static function EncodeGroup(array $inputs, $data) : string
     { 
         $hashData = ""; 
-        $currentDynamicIndex = count($inputs) * self::NUM_ZEROS / 2; 
+        $currentDynamicIndex = 0;
+		{
+			$staticInputCount = 0;
+			foreach ($inputs as $input) {
+				$varType = self::GetParameterType($input->type);
+				
+				// for non-tuple item, we'll have in-place value or offset
+				if ($varType != VariableType::Tuple) {
+					$staticInputCount++;
+					continue;
+				}
+				
+				// for tuple we'll have several in place values or one pointer to the start of several in-place values
+				if (self::ExistsDynamicParameter($input->components)) {
+					$staticInputCount++;
+				} else {
+					$staticInputCount += count($input->components);
+				}
+			}
+			$currentDynamicIndex = $staticInputCount * self::NUM_ZEROS / 2;
+		}
          
         //parameters
         $i = 0; 
@@ -387,14 +407,14 @@ class ABI
             }
             else if ($varType == VariableType::Tuple)
             {
-                $input->hash =  self::EncodeGroup($input->components, $inputData);
-
-				$res =  '';
+            	$res = self::EncodeGroup($input->components, $inputData);
+				
+				// if the tuple is dynamic, we return offset and add tuple's data at the end
 				if (self::ExistsDynamicParameter($input->components)) {
-					$res = self::EncodeInput_UInt($currentDynamicIndex); 
+					$input->hash = $res;
+					return self::EncodeInput_UInt($currentDynamicIndex);
 				}
-                 
-                return $res;
+				return $res;
             }
             else if ($varType == VariableType::String) {
                 $input->hash = self::EncodeInput_String($inputData);
