@@ -68,8 +68,7 @@ WTest::printTitle('ABI - EncodeParameters_External');
 $res = ABI::EncodeParameters_External(['uint256','string'], ['2345675643', 'Hello!%']);
 WTest::check('[\'uint256\',\'string\'] ([\'2345675643\', \'Hello!%\'])', $res == '0x000000000000000000000000000000000000000000000000000000008bd02b7b0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000748656c6c6f212500000000000000000000000000000000000000000000000000');
  
-
-
+ 
 //
 WTest::printTitle('ABI - DecodeParameter_External'); 
 
@@ -78,17 +77,54 @@ WTest::check('uint256 (16)', $res->toString() == "16");
  
 $res = ABI::DecodeParameter_External('string', '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000848656c6c6f212521000000000000000000000000000000000000000000000000');
 WTest::check('string (Hello!%!)', $res == "Hello!%!"); 
-
-
+ 
 $res = ABI::DecodeParameter_External('bytes', '0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003df32340000000000000000000000000000000000000000000000000000000000');
 WTest::check('bytes (df3234) ', bin2hex($res) == ("df3234")); 
-
-
-
+ 
 $res = ABI::DecodeParameter_External('bytes32[]', '0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002df32340000000000000000000000000000000000000000000000000000000000fdfd000000000000000000000000000000000000000000000000000000000000');
 $res_format = [bin2hex($res[0]), bin2hex($res[1])];
 WTest::check('bytes32[] ([\'df3234\', \'fdfd\']) ', $res_format == ['df3234','fdfd']); 
  
+
+
+//
+WTest::printTitle('ABI - EncodeGroup'); 
+
+$abi_tuples_raw = '[{"inputs":[{"components":[{"internalType":"uint256","name":"uint_a","type":"uint256"},{"internalType":"bool","name":"boolean_a","type":"bool"}],"internalType":"struct contract_test_mirror_tuple.Tuple_A","name":"t","type":"tuple"}],"name":"Mirror_TupleA","outputs":[{"components":[{"internalType":"uint256","name":"uint_a","type":"uint256"},{"internalType":"bool","name":"boolean_a","type":"bool"}],"internalType":"struct contract_test_mirror_tuple.Tuple_A","name":"","type":"tuple"}],"stateMutability":"pure","type":"function"},{"inputs":[{"components":[{"internalType":"string","name":"string_b1","type":"string"},{"internalType":"string","name":"string_b2","type":"string"}],"internalType":"struct contract_test_mirror_tuple.Tuple_B","name":"t","type":"tuple"}],"name":"Mirror_TupleB","outputs":[{"components":[{"internalType":"string","name":"string_b1","type":"string"},{"internalType":"string","name":"string_b2","type":"string"}],"internalType":"struct contract_test_mirror_tuple.Tuple_B","name":"","type":"tuple"}],"stateMutability":"pure","type":"function"},{"inputs":[{"components":[{"internalType":"uint256","name":"uint_c","type":"uint256"},{"internalType":"string","name":"string_c","type":"string"}],"internalType":"struct contract_test_mirror_tuple.Tuple_C","name":"t","type":"tuple"}],"name":"Mirror_TupleC","outputs":[{"components":[{"internalType":"uint256","name":"uint_c","type":"uint256"},{"internalType":"string","name":"string_c","type":"string"}],"internalType":"struct contract_test_mirror_tuple.Tuple_C","name":"","type":"tuple"}],"stateMutability":"pure","type":"function"}]';
+$abi_tuples = new ABI();
+$abi_tuples->Init($abi_tuples_raw);
+
+$d = new stdClass();
+$d->uint_a = 123;
+$d->boolean_a = false;
+$res = $abi_tuples->EncodeData('Mirror_TupleA', $d); 
+WTest::check('Mirror_TupleA (full static)', $res == '0x1cdf9093000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000000');
+ 
+$d = new stdClass();
+$d->string_b1 = 'aaa';
+$d->string_b2 = 'bbb';
+$res = $abi_tuples->EncodeData('Mirror_TupleB', $d); 
+WTest::check('Mirror_TupleB (full dynamic)', $res == '0x68116cf20000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003616161000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036262620000000000000000000000000000000000000000000000000000000000');
+
+$d = new stdClass();
+$d->uint_c = 123;
+$d->string_c = 'ccc';
+$res = $abi_tuples->EncodeData('Mirror_TupleC', $d); 
+WTest::check('Mirror_TupleC (static/dynamic mix)', $res == '0x445cf8270000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000036363630000000000000000000000000000000000000000000000000000000000');
+		
+
+WTest::printTitle('ABI - DecodeGroup'); 
+
+
+$res = $abi_tuples->DecodeData('Mirror_TupleA', '0x000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000000');
+WTest::check('Mirror_TupleA (full static)',  $res->tuple_1->uint_a->toString() == '123' && !$res->tuple_1->bool_a);
+
+$res = $abi_tuples->DecodeData('Mirror_TupleB', '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003616161000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000036262620000000000000000000000000000000000000000000000000000000000');
+WTest::check('Mirror_TupleB (full dynamic)',  $res->tuple_1->string_b1 == 'aaa' && $res->tuple_1->string_b2 == 'bbb');
+
+$res = $abi_tuples->DecodeData('Mirror_TupleC', '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000036363630000000000000000000000000000000000000000000000000000000000');
+WTest::check('Mirror_TupleC (static/dynamic mix)',  $res->tuple_1->uint_c->toString() == '123' && $res->tuple_1->string_c == 'ccc');
+
 
 //UTILS
 
