@@ -34,4 +34,10 @@ contract contract_test_mirror_tuple
         return t;
     }
 
+
+    function Mirror_TupleArray(Tuple_C[] memory t) public pure returns (Tuple_C[] memory)
+    {
+        return t;
+    }
+
 }

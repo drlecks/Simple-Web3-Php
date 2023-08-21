@@ -354,27 +354,39 @@ class ABI
 	
 
 
-    private static function EncodeInput_Array($input_type, $inputData)
+    private static function EncodeInput_Array($full_input, $inputData)
     { 
-        $inputs = [];
-        $currentDynamicIndex = count($inputData) * self::NUM_ZEROS / 2;
-        
-        //array lenght
+		$inputs = [];
+		$currentDynamicIndex = count($inputData) * self::NUM_ZEROS / 2;
+
+		//prepare clean input 
+		$last_array_marker 	= strrpos($full_input->type, '[');  
+		$clean_type 		= substr($full_input->type, 0, $last_array_marker); 
+		 
+		$last_array_marker 	= strrpos($full_input->internalType, '[');  
+		$clean_internalType = substr($full_input->internalType, 0, $last_array_marker); 
+		 
+        //array length
         $hashData = self::EncodeInput_UInt(count($inputData));
           
         foreach($inputData as $pos => $element) 
-        {      
-            $input = new stdClass(); 
-            $input->type = $input_type;
-            $inputs []= $input; 
+        {       
+			$input = new stdClass(); 
+			$input->type = $clean_type; 
+			$input->internalType = $clean_internalType; 
+			if (isset($full_input->components)) {
+				$input->components = $full_input->components;
+			} 
+			$inputs []= $input;
+
             $hashData .= self::EncodeInput($input, $element, 1, $currentDynamicIndex);  
 
             if (isset($input->hash)) $currentDynamicIndex += strlen($input->hash) / 2; 
         }
 
         foreach($inputs as $pos => $input) 
-        {
-            $data = $inputData[$pos];
+        { 
+			$data = $inputData[$pos];
             $hashData .= self::EncodeInput($input, $data, 2, $currentDynamicIndex);  
         }
 
@@ -397,11 +409,8 @@ class ABI
 
             //dynamic
             if (Utils::string_contains($input->type, '['))
-            {
-                $last_array_marker = strrpos($input->type, '[');  
-                $clean_type = substr($input->type, 0, $last_array_marker); 
- 
-                $input->hash =  self::EncodeInput_Array($clean_type, $inputData);
+            { 
+                $input->hash =  self::EncodeInput_Array($input, $inputData);
                 $res = self::EncodeInput_UInt($currentDynamicIndex); 
                 return $res; 
             }
