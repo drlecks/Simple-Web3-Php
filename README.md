@@ -141,7 +141,7 @@ $result = $sweb3->send($sendParams);
 $sweb3->batch(true);
 
 $sweb3->call('eth_blockNumber', []); 
-$sweb3->call('eth_getBalance', [$sweb3->personal->address, 'latest']);
+$sweb3->call('eth_getBalance', [$sweb3->personal->address], 'latest');
 
 //execute all batched calls in one request
 $res = $sweb3->executeBatch();

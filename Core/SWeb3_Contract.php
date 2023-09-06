@@ -41,7 +41,7 @@ class SWeb3_Contract
     }
   
 
-    function call(string $function_name, $callData = null, $extraParams = null)
+    function call(string $function_name, $callData = null, $extraParams = null, $blockNumber = 'latest')
     {  
         if (!$this->ABI->isCallFunction($function_name)) {
             throw new Exception('ERROR: ' . $function_name . ' does not exist as a call function in this contract');  
@@ -49,12 +49,11 @@ class SWeb3_Contract
 
         $hashData = $this->ABI->EncodeData($function_name, $callData);
       
-        if ($extraParams == null) $extraParams = new stdClass();
-        $extraParams->to = $this->address;
-        $extraParams->data = $hashData;
-    
-        $data = [$extraParams, 'latest'];
-        $result = $this->sweb3->call('eth_call', $data);
+        if ($extraParams == null) $extraParams = [];
+        $extraParams['to'] = $this->address;
+        $extraParams['data'] = $hashData; 
+
+        $result = $this->sweb3->call('eth_call', [$extraParams], $blockNumber);
          
         if(isset($result->result))
             return $this->DecodeData($function_name, $result->result);

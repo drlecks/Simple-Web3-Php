@@ -28,7 +28,7 @@ use phpseclib\Math\BigInteger as BigNumber;
 
 $extra_curl_params = [];
 //INFURA ONLY: Prepare extra curl params, to add infura private key to the request
-$extra_curl_params[CURLOPT_USERPWD] = ':'.INFURA_PROJECT_SECRET;
+//$extra_curl_params[CURLOPT_USERPWD] = ':'.INFURA_PROJECT_SECRET;
 
 //initialize SWeb3 main object
 $sweb3 = new SWeb3(ETHEREUM_NET_ENDPOINT, $extra_curl_params);
