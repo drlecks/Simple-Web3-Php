@@ -880,7 +880,9 @@ class ABI
 	
     private static function DecodeInput_Address($encoded, $start)
     {
-        $partial = self::RemoveZeros(substr($encoded, $start, 64), true);  
+        $partial = self::RemoveZeros(substr($encoded, $start, 64), true);
+	//add zero padding from left for 20 bytes
+        $partial = str_pad($partial, 40, '0', STR_PAD_LEFT);
         return '0x'.$partial;
     }
 
