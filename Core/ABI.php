@@ -100,7 +100,7 @@ class ABI
 		else if  (Utils::string_contains($abi_string_type, 'bytes')) 	return VariableType::BytesFixed;
 
 		//dynamic
-        else if (Utils::string_contains($abi_string_type, 'tuple'))         	return VariableType::Tuple;
+        else if (Utils::string_contains($abi_string_type, 'tuple'))     return VariableType::Tuple;
         else if (Utils::string_contains($abi_string_type, 'string'))   	return VariableType::String;
          
 		//static 
@@ -121,11 +121,11 @@ class ABI
 
 	private static function IsStaticParameter(int $vType) : bool
     { 
-		return ($vType == VariableType::UInt 
+		return $vType == VariableType::UInt 
 				|| $vType == VariableType::Int
 				|| $vType == VariableType::Bool
 				|| $vType == VariableType::Address
-				|| $vType == VariableType::BytesFixed);
+				|| $vType == VariableType::BytesFixed;
     }
 
 
@@ -628,7 +628,7 @@ class ABI
     public function DecodeData($function_name, $encoded)
     { 
         $encoded = substr($encoded, 2);
-        $function = $this->GetFunction($function_name);  
+        $function = $this->GetFunction($function_name);   
 
         $decoded = self::DecodeGroup($function->outputs, $encoded, 0);
 
@@ -638,69 +638,77 @@ class ABI
 
     public static function DecodeGroup($outputs, $encoded, $index)
     { 
-        $group = new stdClass();
-        $first_index = $index;
-        $elem_index = 1;
-        $tuple_count = 1;
-        $array_count = 1; 
-		$output_count = count($outputs);
+        $group 			= new stdClass();
+        $first_index 	= $index;
+        $elem_index 	= 1;
+        $tuple_count 	= 1;
+        $array_count 	= 1; 
+		$output_count 	= count($outputs); 
   
         foreach ($outputs as $output)
-        {  
-			$output_type = is_string($output) ? $output : $output->type;
-            $varType = self::GetParameterType($output_type);
-             
+        {    
+			$output_type 		= is_string($output) ? $output : $output->type;
+            $varType 			= self::GetParameterType($output_type);
+			$output_type_offset = self::GetOutputOffset($output);
+			$var_name 			= ''; 
+			 
             //dynamic
             if(Utils::string_contains($output->type, '['))
-            {  
-                $last_array_marker = strrpos($output->type, '[');  
-                $clean_type = substr($output->type, 0, $last_array_marker); 
-                $var_name = $output->name != '' ? $output->name : 'array_'.$array_count; 
-				$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
- 
-                $group->$var_name = self::DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start); 
-                $array_count++;
+            {   
+                $var_name 			= $output->name != '' ? $output->name : 'array_'.$array_count; 
+				  
+				//arrays with all static parameters have no initial array offset 
+				$isStaticArray = self::IsStaticParameter($varType);
+				if ($varType == VariableType::Tuple) {
+					$isStaticArray = !self::ExistsDynamicParameter($output->components);
+				} 
+				$dynamic_data_start = 0; 
+				if ($isStaticArray) $dynamic_data_start = $index;  
+				else 				$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;   
+
+                $group->$var_name = self::DecodeInput_Array($output, $encoded, $dynamic_data_start);  
+                $array_count++; 
             }
             else if ($varType == VariableType::Tuple) 
-			{ 
+			{  
                 $var_name = $output->name != '' ? $output->name : 'tuple_'.$tuple_count; 
 
 				//tuples with only static parameters have no initial tuple offset
-                $dynamic_data_start = $index; 
-				$hasDynamicParameters = self::ExistsDynamicParameter($output->components); 
-				if($hasDynamicParameters)
-				{ 
+				$hasDynamicParameters 	= self::ExistsDynamicParameter($output->components); 
+
+                $dynamic_data_start 	= $index;  
+				if ($hasDynamicParameters) { 
 					$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
-				} 
+				}  
 				 
-                $group->$var_name = self::DecodeGroup($output->components, $encoded, $dynamic_data_start); 
-                $tuple_count++;
+                $group->$var_name = self::DecodeGroup($output->components, $encoded, $dynamic_data_start);  
+                $tuple_count++; 
             }
             else if ($varType == VariableType::String) 
 			{ 
-                $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
+                $var_name 			= $output->name != '' ? $output->name : 'elem_'.$elem_index;
                 $dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $group->$var_name = self::DecodeInput_String($encoded, $dynamic_data_start);  
+                $group->$var_name 	= self::DecodeInput_String($encoded, $dynamic_data_start);  
             }
 			else if ($varType == VariableType::Bytes) 
 			{ 
-                $var_name = $output->name != '' ? $output->name : 'elem_'.$elem_index;
+                $var_name 			= $output->name != '' ? $output->name : 'elem_'.$elem_index;
                 $dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $group->$var_name = self::DecodeInput_Bytes($encoded, $dynamic_data_start);  
+                $group->$var_name 	= self::DecodeInput_Bytes($encoded, $dynamic_data_start);  
             }
             //static
             else
-            {
+            { 
 				$var_name = 'result';
-				if($output->name != '')  $var_name = $output->name;
-				else if($output_count > 1) $var_name = 'elem_'.$elem_index; 
+				if($output->name != '')  	$var_name = $output->name;
+				else if($output_count > 1) 	$var_name = 'elem_'.$elem_index; 
  
                 $group->$var_name = self::DecodeInput_Generic($varType, $encoded, $index);   
-            }  
+            }   
 
             $elem_index++;
-            $index += self::NUM_ZEROS; 
-        } 
+            $index += $output_type_offset * self::NUM_ZEROS;  			
+        }  
 
         return $group; 
     } 
@@ -721,10 +729,8 @@ class ABI
 
 		//dynamic
 		if(Utils::string_contains($output->type, '['))
-		{  
-			$last_array_marker = strrpos($output->type, '[');  
-			$clean_type = substr($output->type, 0, $last_array_marker);    
-			$res = self::DecodeInput_Array($output, $clean_type, $encoded, $dynamic_data_start);  
+		{    
+			$res = self::DecodeInput_Array($output, $encoded, $dynamic_data_start);  
 		}
 		else if ($varType == VariableType::Tuple) 
 		{ 
@@ -746,71 +752,87 @@ class ABI
 		}   
 
         return $res; 
-    }  
-	
+    }   
 
 	
-    private static function DecodeInput_Array($output, $array_inner_type, $encoded, $index)
-    {
+    private static function DecodeInput_Array($output, $encoded, $index)
+    { 
         $array = [];
         $first_index = $index;  
+ 
+		$clean_output = clone $output;
+		$last_array_marker 	= strrpos($clean_output->type, '[');  
+		$clean_output->type 	= substr($clean_output->type, 0, $last_array_marker); 
 
-        $varType = self::GetParameterType($array_inner_type);
+        $varType 		= self::GetParameterType($clean_output->type);
+		$isStaticType 	= self::IsStaticParameter($varType);
+		if ($varType == VariableType::Tuple) {
+			$isStaticType = !self::ExistsDynamicParameter($output->components);
+		}
+ 
+		$length = 0;
+		if ($isStaticType)  { 
+			$last_array_marker_end 	= strrpos($output->type, ']');  
+		  	$length 				= (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1);  
+		}
 
-        $length = self::DecodeInput_UInt_Internal($encoded, $first_index); 
-        $first_index += self::NUM_ZEROS;
-        $index += self::NUM_ZEROS;  
-  
-        for($i = 0; $i < $length; $i++)
+		if ($length <= 0)  {
+			$length 		= self::DecodeInput_UInt_Internal($encoded, $first_index); 
+			$first_index 	+= self::NUM_ZEROS;
+        	$index 			+= self::NUM_ZEROS;
+		} 
+
+		$element_offset = 1;
+		if ($isStaticType) {
+			$element_offset = $length > 0 ? self::GetOutputOffset($output) / $length : 1;
+		}   
+		    
+        for ($i = 0; $i < $length; $i++)
         {  
             $res = "error"; 
-            if (Utils::string_contains($array_inner_type, '[')) 
-			{   
-                $last_array_marker = strrpos($array_inner_type, '[');  
-                $clean_type = substr($array_inner_type, 0, $last_array_marker);
- 
-                $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $res = self::DecodeInput_Array($output, $clean_type, $encoded, $element_start); 
+            if (Utils::string_contains($clean_output->type, '[')) 
+			{    
+				//arrays with all static parameters have no initial array offset 
+				$element_start = $index; 
+				if ($isStaticType) { 
+					$element_start = $index; 
+				}
+				else {
+					$element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
+				} 
 
-				$index += self::NUM_ZEROS;
+                $res = self::DecodeInput_Array($clean_output, $encoded, $element_start);   
             }
             else if($varType == VariableType::Tuple) 
 			{
-				//tuple with all static parameters have no initial array offset 
-				$hasDynamicParameters = self::ExistsDynamicParameter($output->components);  
-				if($hasDynamicParameters)
-				{ 
-					$element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
-					$index += self::NUM_ZEROS;
+				//tuple with all static parameters have no initial array offset  
+				if($isStaticType) { 
+					$element_start = $index; 
 				}
-				else
-				{
-					$element_start = $index;
-					$index += self::NUM_ZEROS * count($output->components);
+				else {
+					$element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;  
 				} 
 
-                $res = self::DecodeGroup($output->components, $encoded, $element_start);  
+                $res = self::DecodeGroup($clean_output->components, $encoded, $element_start);  
             }
             else if($varType == VariableType::String) 
 			{ 
                 $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $res = self::DecodeInput_String($encoded, $element_start);  
-				$index += self::NUM_ZEROS;
+                $res = self::DecodeInput_String($encoded, $element_start);   
             }
 			else if($varType == VariableType::Bytes) 
 			{ 
                 $element_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
-                $res = self::DecodeInput_Bytes($encoded, $element_start);  
-				$index += self::NUM_ZEROS;
+                $res = self::DecodeInput_Bytes($encoded, $element_start);   
             }
             else 
 			{
-                $res = self::DecodeInput_Generic($varType, $encoded, $index); 
-				$index += self::NUM_ZEROS;
-            }
-            
-            $array []= $res; 
-        }
+                $res = self::DecodeInput_Generic($varType, $encoded, $index);  
+            } 
+
+            $array []= $res;  
+			$index += self::NUM_ZEROS * $element_offset;  
+        } 
 
         return $array;
     }
@@ -846,6 +868,7 @@ class ABI
     {
         $partial = substr($encoded, $start, 64);    
         $partial = self::RemoveZeros($partial, true); 
+
         return hexdec($partial);
     }
 
@@ -881,8 +904,10 @@ class ABI
     private static function DecodeInput_Address($encoded, $start)
     {
         $partial = self::RemoveZeros(substr($encoded, $start, 64), true);
-	//add zero padding from left for 20 bytes
+
+		//add zero padding from left for 20 bytes
         $partial = str_pad($partial, 40, '0', STR_PAD_LEFT);
+
         return '0x'.$partial;
     }
 
@@ -932,6 +957,60 @@ class ABI
         
         return $data;
     }
+
+
+	private static function GetOutputOffset ($output) : int
+	{
+		$output_type 	= is_string($output) ? $output : $output->type;
+		$varType 		= self::GetParameterType($output_type);
+
+		if (Utils::string_contains($output_type, '[')) 
+		{     
+			$last_array_marker 		= strrpos($output->type, '[');  
+			$last_array_marker_end 	= strrpos($output->type, ']');  
+			$length = (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1);
+
+			if ($varType == VariableType::Tuple) 
+			{
+				if (!self::ExistsDynamicParameter($output->components)) {
+					return $length * self::GetOutputOffset_StaticComponents($output->components);
+				}
+			}
+			else if (self::IsStaticParameter($varType))
+			{
+				return $length;
+			} 
+		}
+		else if ($varType == VariableType::Tuple) 
+		{ 
+			if (!self::ExistsDynamicParameter($output->components)) {
+				return self::GetOutputOffset_StaticComponents($output->components);
+			}
+		} 
+
+		return 1;
+	}
+
+
+	private static function GetOutputOffset_StaticComponents($components) : int
+	{
+		$offset = 0;
+
+		foreach ($components as $comp)
+		{
+			$output_type 	= is_string($comp) ? $comp : $comp->type;
+			$varType 		= self::GetParameterType($output_type);
+	
+			if (Utils::string_contains($output_type, '[') || $varType == VariableType::Tuple) {     
+				$offset += self::GetOutputOffset($comp);
+			}
+			else { 
+				$offset++;
+			} 
+		}
+		 
+		return $offset;
+	}
 
 
 
