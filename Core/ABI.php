@@ -131,10 +131,25 @@ class ABI
 
 	private static function ExistsDynamicParameter(array $components) : bool
 	{ 
-		foreach ($components as $comp) {  
-			$comp_type = is_string($comp) ? $comp : $comp->type;
-			$isStatic = self::IsStaticParameter(self::GetParameterType($comp_type));
-			if (!$isStatic) return true; 
+		foreach ($components as $comp) 
+		{  
+			if (is_string($comp)) 
+			{
+				$isStatic = self::IsStaticParameter(self::GetParameterType($comp)); 
+			}
+			else
+			{
+				if (isset($comp->components)) {
+					$isStatic = !self::ExistsDynamicParameter($comp->components); 
+				}
+				else {
+					$isStatic = self::IsStaticParameter(self::GetParameterType($comp->type)); 
+				}
+			}
+
+			if (!$isStatic) {  
+				return true; 
+			}
 		}
 
 		return false;
@@ -644,6 +659,7 @@ class ABI
         $tuple_count 	= 1;
         $array_count 	= 1; 
 		$output_count 	= count($outputs); 
+ 
   
         foreach ($outputs as $output)
         {    
@@ -651,7 +667,7 @@ class ABI
             $varType 			= self::GetParameterType($output_type);
 			$output_type_offset = self::GetOutputOffset($output);
 			$var_name 			= ''; 
-			 
+
             //dynamic
             if(Utils::string_contains($output->type, '['))
             {   
@@ -679,8 +695,8 @@ class ABI
                 $dynamic_data_start 	= $index;  
 				if ($hasDynamicParameters) { 
 					$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2; 
-				}  
-				 
+				}   
+
                 $group->$var_name = self::DecodeGroup($output->components, $encoded, $dynamic_data_start);  
                 $tuple_count++; 
             }

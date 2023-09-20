@@ -188,11 +188,11 @@ function PrintCallResult($callName, $result)
 }
 
 
-function PrintObject($x)
+function PrintObject($x, $tabs = 0)
 { 
 	if ($x instanceof BigNumber)
 	{
-		return $x . '';
+		return $x;
 	}
 	
 	if (is_object($x)) {
@@ -208,10 +208,10 @@ function PrintObject($x)
 			if ($first)  	$first = false;
 			else 			$text .= ", ";
 
-			$text .= $key . " : " . PrintObject($value);
+			$text .= '<br>' . str_pad("", $tabs * 24, "&nbsp;") . $key . " : " . PrintObject($value, $tabs + 1);
 		}
 
-		return $text . "]"; 
+		return $text . '<br>' . str_pad("", ($tabs - 1) * 24, "&nbsp;") . "]"; 
 	}
 	 
 	return $x . '';
