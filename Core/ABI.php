@@ -643,7 +643,7 @@ class ABI
     public function DecodeData($function_name, $encoded)
     { 
         $encoded = substr($encoded, 2);
-        $function = $this->GetFunction($function_name);   
+        $function = $this->GetFunction($function_name);     
 
         $decoded = self::DecodeGroup($function->outputs, $encoded, 0);
 
@@ -677,11 +677,13 @@ class ABI
 				$isStaticArray = self::IsStaticParameter($varType);
 				if ($varType == VariableType::Tuple) {
 					$isStaticArray = !self::ExistsDynamicParameter($output->components);
-				} 
-				$dynamic_data_start = 0; 
-				if ($isStaticArray) $dynamic_data_start = $index;  
-				else 				$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;   
+				}  
+				$isStaticLength = $isStaticArray && !Utils::string_contains($output->type, '[]');
 
+				$dynamic_data_start = 0; 
+				if ($isStaticLength) 	$dynamic_data_start = $index;  
+				else 					$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;   
+ 
                 $group->$var_name = self::DecodeInput_Array($output, $encoded, $dynamic_data_start);  
                 $array_count++; 
             }
@@ -784,7 +786,7 @@ class ABI
 		$isStaticType 	= self::IsStaticParameter($varType);
 		if ($varType == VariableType::Tuple) {
 			$isStaticType = !self::ExistsDynamicParameter($output->components);
-		}
+		} 
  
 		$length = 0;
 		if ($isStaticType)  { 
@@ -800,17 +802,18 @@ class ABI
 
 		$element_offset = 1;
 		if ($isStaticType) {
-			$element_offset = $length > 0 ? self::GetOutputOffset($output) / $length : 1;
-		}   
+			$element_offset = self::GetOutputOffset($clean_output);
+		}     
 		    
         for ($i = 0; $i < $length; $i++)
-        {  
+        {   
             $res = "error"; 
             if (Utils::string_contains($clean_output->type, '[')) 
 			{    
+				$isStaticLength = $isStaticType && !Utils::string_contains($clean_output->type, '[]');
 				//arrays with all static parameters have no initial array offset 
 				$element_start = $index; 
-				if ($isStaticType) { 
+				if ($isStaticLength) { 
 					$element_start = $index; 
 				}
 				else {
@@ -978,28 +981,28 @@ class ABI
 	private static function GetOutputOffset ($output) : int
 	{
 		$output_type 	= is_string($output) ? $output : $output->type;
-		$varType 		= self::GetParameterType($output_type);
+		$varType 		= self::GetParameterType($output_type); 
 
 		if (Utils::string_contains($output_type, '[')) 
 		{     
 			$last_array_marker 		= strrpos($output->type, '[');  
 			$last_array_marker_end 	= strrpos($output->type, ']');  
-			$length = (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1);
+			$length = (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1); 
 
 			if ($varType == VariableType::Tuple) 
 			{
-				if (!self::ExistsDynamicParameter($output->components)) {
+				if (!self::ExistsDynamicParameter($output->components)) { 
 					return $length * self::GetOutputOffset_StaticComponents($output->components);
 				}
 			}
 			else if (self::IsStaticParameter($varType))
-			{
+			{ 
 				return $length;
 			} 
 		}
 		else if ($varType == VariableType::Tuple) 
 		{ 
-			if (!self::ExistsDynamicParameter($output->components)) {
+			if (!self::ExistsDynamicParameter($output->components)) {  
 				return self::GetOutputOffset_StaticComponents($output->components);
 			}
 		} 
