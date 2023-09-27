@@ -666,7 +666,7 @@ class ABI
 			$output_type 		= is_string($output) ? $output : $output->type;
             $varType 			= self::GetParameterType($output_type);
 			$output_type_offset = self::GetOutputOffset($output);
-			$var_name 			= ''; 
+			$var_name 			= '';  
 
             //dynamic
             if(Utils::string_contains($output->type, '['))
@@ -683,7 +683,7 @@ class ABI
 				$dynamic_data_start = 0; 
 				if ($isStaticLength) 	$dynamic_data_start = $index;  
 				else 					$dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;   
- 
+  
                 $group->$var_name = self::DecodeInput_Array($output, $encoded, $dynamic_data_start);  
                 $array_count++; 
             }
@@ -792,9 +792,9 @@ class ABI
 		if ($isStaticType)  { 
 			$last_array_marker_end 	= strrpos($output->type, ']');  
 		  	$length 				= (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1);  
-		}
+		} 
 
-		if ($length <= 0)  {
+		if ($length <= 0)  { 
 			$length 		= self::DecodeInput_UInt_Internal($encoded, $first_index); 
 			$first_index 	+= self::NUM_ZEROS;
         	$index 			+= self::NUM_ZEROS;
@@ -803,7 +803,7 @@ class ABI
 		$element_offset = 1;
 		if ($isStaticType) {
 			$element_offset = self::GetOutputOffset($clean_output);
-		}     
+		}      
 		    
         for ($i = 0; $i < $length; $i++)
         {   
@@ -989,16 +989,19 @@ class ABI
 			$last_array_marker_end 	= strrpos($output->type, ']');  
 			$length = (int) substr($output->type, $last_array_marker + 1, $last_array_marker_end - $last_array_marker - 1); 
 
-			if ($varType == VariableType::Tuple) 
-			{
-				if (!self::ExistsDynamicParameter($output->components)) { 
-					return $length * self::GetOutputOffset_StaticComponents($output->components);
+			if ($length > 0) 
+			{  
+				if ($varType == VariableType::Tuple) 
+				{
+					if (!self::ExistsDynamicParameter($output->components)) { 
+						return $length * self::GetOutputOffset_StaticComponents($output->components);
+					}
 				}
+				else if (self::IsStaticParameter($varType))
+				{ 
+					return $length;
+				} 
 			}
-			else if (self::IsStaticParameter($varType))
-			{ 
-				return $length;
-			} 
 		}
 		else if ($varType == VariableType::Tuple) 
 		{ 
