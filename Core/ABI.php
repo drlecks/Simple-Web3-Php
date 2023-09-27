@@ -102,6 +102,7 @@ class ABI
 		//dynamic
         else if (Utils::string_contains($abi_string_type, 'tuple'))     return VariableType::Tuple;
         else if (Utils::string_contains($abi_string_type, 'string'))   	return VariableType::String;
+        else if (Utils::string_contains($abi_string_type, '['))         return VariableType::Array;
          
 		//static 
 		else if (Utils::string_contains($abi_string_type, 'uint') )    	return VariableType::UInt;
