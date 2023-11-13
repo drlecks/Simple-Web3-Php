@@ -542,6 +542,13 @@ class ABI
 	private static function EncodeInput_Bytes($data)
     { 
 		$hexa = $data;
+ 
+		//I'm not proud of this. Official parsers seem to handle 0x as 0x0 when input is type bytes
+		//I think it can cause problems when you want to use bytes as a string, because you can't save the string "0x"
+		//but looking at issue #50 it seems clear that the current evm behaviour is this.
+		if ($data == '0x') {
+			$data = '';
+		}
 
 		//if data is not a valid hexa, it means its a binary rep
 		if (substr($data, 0, 2) != '0x' || !ctype_xdigit(substr($data, 2)) || strlen($data) % 2 != 0) { 
@@ -550,7 +557,7 @@ class ABI
 
 		if (substr($hexa, 0, 2) == '0x') {
 			$hexa = substr($hexa, 2);
-		}
+		} 
 
         //length + hexa string
         $hash = self::EncodeInput_UInt(strlen($hexa) / 2) . self::AddZeros($hexa, false);  
