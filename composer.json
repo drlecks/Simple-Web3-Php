@@ -15,7 +15,7 @@
 
     "require": { 
 		"web3p/rlp": "0.3.4",
-        "kornrunner/ethereum-offline-raw-tx": "^0.4.0",
+        "kornrunner/ethereum-offline-raw-tx": "^0.6.0",
         "kornrunner/keccak": "~1", 
         "phpseclib/phpseclib": "~2.0.30",
         "simplito/elliptic-php": "^1.0"
