@@ -721,6 +721,11 @@ class ABI
                 $dynamic_data_start = $first_index + self::DecodeInput_UInt_Internal($encoded, $index) * 2;
                 $group->$var_name 	= self::DecodeInput_Bytes($encoded, $dynamic_data_start);  
             }
+	    else if ($varType == VariableType::BytesFixed) {
+                $var_name 			= $output->name != '' ? $output->name : 'elem_'.$elem_index;
+                $dynamic_data_start = 64 * ($elem_index - 1);
+                $group->$var_name 	= self::DecodeInput_BytesFixed($encoded, $dynamic_data_start);  
+            }
             //static
             else
             { 
@@ -950,8 +955,8 @@ class ABI
 
 	private static function DecodeInput_BytesFixed($encoded, $start)
     { 
-        $partial = self::RemoveZeros(substr($encoded, $start, 64), false);  
-        return hex2bin($partial);
+        $partial = substr($encoded, $start, 64);  
+        return $partial;
     }
 
 
