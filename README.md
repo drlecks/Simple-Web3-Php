@@ -99,7 +99,17 @@ $s_val = Utils::fromWeiToString('1001', 'kwei'); // "1.001"
 $s_val = Utils::toWeiString('1.001', 'kwei'); // "1001"
 ```  
 
+### ABI Encoding  
+Manually encode parameters:
+```php  
+$abiEncoded = ABI::EncodeParameters_External(['address', 'uint256'], [$userAddress, 1]);
+```  
 
+Keccak 256 hash:
+```php  
+$hash = Utils::sha3($abiEncoded);
+```  
+   
 ### General ethereum block information call:
 ```php 
 $res = $sweb3->call('eth_blockNumber', []);
