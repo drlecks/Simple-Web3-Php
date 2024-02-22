@@ -31,7 +31,7 @@ abstract class VariableType
 use stdClass; 
 use Exception;
 use kornrunner\Keccak;
-use phpseclib\Math\BigInteger as BigNumber;
+use phpseclib3\Math\BigInteger as BigNumber;
 
 class ABI
 {
@@ -47,7 +47,7 @@ class ABI
     const NUM_ZEROS = 64;
     
 
-    public function Init($baseJSON)
+    public function Init(string $baseJSON)
     {
         $this->functions = [];
         $this->events = [];
@@ -55,7 +55,7 @@ class ABI
         $this->events_encoded = []; 
         $parsedJSON = json_decode($baseJSON);
 
-        foreach($parsedJSON as $func)
+        foreach ($parsedJSON as $func)
          { 
             if($func->type == 'constructor') {
                 $this->constructor = $func;
@@ -74,22 +74,42 @@ class ABI
     }
 
 
-    public function GetFunction($function_name)
+    public function GetFunction(?string $function_name)
     {
-        if($function_name == '') return $this->constructor;
-        return $this->functions[$function_name];
+        if (empty($function_name)) return $this->constructor;
+ 
+		if(!empty($this->functions[$function_name])) {
+            return $this->functions[$function_name];
+        } 
+		else {
+            return null;
+        }
     }
 
 
-    public function GetEvent($event_name)
+    public function GetEvent(?string $event_name)
     { 
-        return $this->events[$event_name];
+		if (empty($event_hash)) return null;
+ 
+		if(!empty($this->events[$event_name])) {
+            return $this->events[$event_name];
+        } 
+		else {
+            return null;
+        }
     }
 
 
-    public function GetEventFromHash($event_hash)
+    public function GetEventFromHash(?string $event_hash)
     { 
-        return $this->events_encoded[$event_hash];
+		if (empty($event_hash)) return null;
+
+		if (!empty($this->events_encoded[$event_hash])) {
+            return $this->events_encoded[$event_hash];
+        } 
+		else {
+            return null;
+        }
     }
  
 
