@@ -222,13 +222,13 @@ $result = $contract->deployContract( [123123],  $extra_params);
 ### Usual required includes
 
 ```php 
-use SWeb3\SWeb3;                            //always needed, to create the Web3 object
-use SWeb3\Utils;                            //sweb3 helper classes (for example, hex conversion operations)
-use SWeb3\SWeb3_Contract;                   //contract creation and interaction
-use SWeb3\Accounts;                   		//account creation
-use SWeb3\Account;                   		//single account management (signing)
-use phpseclib\Math\BigInteger as BigNumber; //BigInt handling
-use stdClass;                               //for object interaction 
+use SWeb3\SWeb3;                            	//always needed, to create the Web3 object
+use SWeb3\Utils;                            	//sweb3 helper classes (for example, hex conversion operations)
+use SWeb3\SWeb3_Contract;                  	 	//contract creation and interaction
+use SWeb3\Accounts;                   			//account creation
+use SWeb3\Account;                   			//single account management (signing)
+use phpseclib3\Math\BigInteger as BigNumber; 	//BigInt handling
+use stdClass;                               	//for object interaction 
 ```
 
 # Provided Examples
@@ -296,7 +296,7 @@ Don't base your code structure on this example. This example does not represent 
 - Utils library forked & extended from web3p/web3.php
 - Transaction signing: kornrunner/ethereum-offline-raw-tx
 - sha3 encoding: from kornrunner/keccak
-- BigNumber interaction: phpseclib\Math  
+- BigNumber interaction: phpseclib3\Math  
 - Asymetric key handling: simplito/elliptic-php
 
 
