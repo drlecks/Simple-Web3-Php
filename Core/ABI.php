@@ -303,8 +303,10 @@ class ABI
         $currentDynamicIndex = 0;
 		{
 			$staticInputCount = 0;
-			foreach ($inputs as $input) {
-				$varType = self::GetParameterType($input->type);
+			foreach ($inputs as $input) 
+			{
+				$input_type = is_string($input) ? $input : $input->type;
+				$varType = self::GetParameterType($input_type);
 				
 				// for non-tuple item, we'll have in-place value or offset
 				if ($varType != VariableType::Tuple) {
@@ -333,8 +335,8 @@ class ABI
 			else if (is_string($input)){
 				$var_name =  $input;
 			} 
-
-            $inputData = is_object($data) ? $data->$var_name : $data[$pos];   
+			
+            $inputData = is_object($data) ? $data->$var_name : (isset($data[$pos]) ? $data[$pos] : null);   
             if (is_array($data) && $inputData === null) $inputData = $data[$var_name];
   
             $hashData .= self::EncodeInput($input, $inputData, 1, $currentDynamicIndex); 
@@ -386,6 +388,45 @@ class ABI
         return '0x' . $hashData;
     }
 
+
+	public static function EncodePacked(array $inputs, array $data) : string
+	{
+		$res = "";
+
+		for ($i = 0; $i < count($inputs); $i++)
+		{ 
+			$type 		= $inputs[$i];
+			$val 		= $data[$i];  
+			$varType 	= self::GetParameterType($type);
+
+			if (Utils::string_contains($type, '[')) 
+			{
+				throw new Exception($type . " - Not suported (EncodePacked)");
+			}
+			else if ($varType == VariableType::String || $varType == VariableType::Bytes || $varType == VariableType::BytesFixed) 
+			{
+				if (substr($val, 0, 2) == "0x") $res .= substr($val, 2);
+				else 							$res .= bin2hex($val);
+			}
+			else if ($varType == VariableType::Int || $varType == VariableType::UInt) 
+			{
+				$x = dechex($val);
+				$fixedLength = (int)preg_replace('/[^0-9]/', '', $type,) / 4;
+				if ($fixedLength <= 0) $fixedLength = 64;
+				$res .= str_pad($x, $fixedLength, '0', STR_PAD_LEFT);
+			}
+			else if ($varType == VariableType::Address) 
+			{
+				$res .= (substr($val, 0, 2) == "0x") ? substr($val, 2) : $val;
+			}
+			else 
+			{
+				throw new Exception($type . " - Not suported (EncodePacked)");
+			}
+		}
+
+		return '0x' . $res;
+	}
 	
 
 
@@ -450,7 +491,7 @@ class ABI
             $varType = self::GetParameterType($input_type);
 
             //dynamic
-            if (Utils::string_contains($input->type, '['))
+            if (Utils::string_contains($input_type, '['))
             {   
 				//arrays with all static parameters have no initial array offset 
 				$isStaticArray = self::IsStaticParameter($varType);
