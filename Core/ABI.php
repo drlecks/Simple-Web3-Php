@@ -89,7 +89,7 @@ class ABI
 
     public function GetEvent(?string $event_name)
     { 
-		if (empty($event_hash)) return null;
+		if (empty($event_name)) return null;
  
 		if(!empty($this->events[$event_name])) {
             return $this->events[$event_name];
