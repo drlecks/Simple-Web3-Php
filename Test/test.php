@@ -21,6 +21,8 @@ use SWeb3\Accounts;
 use SWeb3\ABI; 
 use SWeb3\SWeb3; 
 use SWeb3\SWeb3_Contract; 
+use Web3p\RLP\RLP; 
+use SWeb3\EIP712;
 
 use WTest; 
 
@@ -192,9 +194,32 @@ WTest::check('verifySignatureWithAddress', $res);
 //https://toolkit.abdk.consulting/ethereum#rlp
 
 WTest::printTitle('RLP');
-
-use Web3p\RLP\RLP; 
+ 
 $rlp  = new RLP;
 $data = ["0x00112233445566778899", "0xaaaa"];
 $res = $rlp->encode($data);
 WTest::check('RLP encode address leading zero', $res == 'ce8a0011223344556677889982aaaa');   
+
+
+//EIP712 
+WTest::printTitle('EIP712');
+    
+//https://eips.ethereum.org/EIPS/eip-712 
+$types = [ 
+	"Message" => [ 
+		(object) [ "name" => "myName1", "type" => "uint256"] ,
+		(object) [ "name" => "myName2", "type" => "string"] 
+	] 
+];
+$domain = (object) [ 
+	"name" => "My DApp", 
+	"version" => "1", 
+	"chainId" => 123, 
+	"verifyingContract" => "0xeee45a4f343dcdc78d33818ad562bea5612c3b36"
+];
+$data = (object) [ 
+	"myName1" => 321,
+	"myName2" => "abc",
+];
+$hash_eip712 = EIP712::signTypedData_digest($types, $domain, $data); 
+WTest::check('EIP 712 Typed structured data hashing', $hash_eip712 == '0x31f5a9db3b0d503a462147fa6169261ab3598e36b0cb0e56ab9cf3e16772202a');  
