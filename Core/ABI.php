@@ -66,6 +66,20 @@ class ABI
             }
             else if($func->type == 'function') {
                 $this->functions[$func->name] = $func; 
+                //////
+                $fname = $func->name;
+                if (!$func->inputs) {
+                    $fname .= '()';
+                } else {
+                    $p = [];
+                    // collect params
+                    foreach($func->inputs as $k => $v) {
+                        array_push($p, $v->type);
+                    }
+                    $fname .= '('.implode(",", $p).')';
+                }
+                $this->functions[$fname] = $func; 
+                /////
             } 
             else {
                 $this->other_objects []= $func; 
